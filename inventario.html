@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f59e0b">
+    <title>Inventario - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="inventario.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-boxes"></i> Inventario</h2>
+                        <p>Gestión de productos y stock</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <!-- Panel de Acciones -->
+                <div class="actions-panel">
+                    <div class="actions-left">
+                        <button class="btn-primary" onclick="openAddProductModal()">
+                            <i class="fas fa-plus"></i> Agregar Producto
+                        </button>
+                        <button class="btn-danger" onclick="clearInventory()">
+                            <i class="fas fa-trash-alt"></i> Vaciar Inventario
+                        </button>
+                    </div>
+                    <div class="actions-right">
+                        <button class="btn-secondary" onclick="downloadTemplate()">
+                            <i class="fas fa-file-download"></i> Descargar Formato
+                        </button>
+                        <button class="btn-secondary" onclick="importProducts()">
+                            <i class="fas fa-file-import"></i> Importar
+                        </button>
+                        <button class="btn-secondary" onclick="exportProducts()">
+                            <i class="fas fa-file-export"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscador y Filtros -->
+                <div class="search-panel">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar productos por nombre, color o código..." onkeyup="searchProducts()">
+                    </div>
+                    <div class="rows-selector">
+                        <label>Mostrar:</label>
+                        <select id="rowsPerPage" onchange="changeRowsPerPage()">
+                            <option value="5" selected>5 filas</option>
+                            <option value="10">10 filas</option>
+                            <option value="50">50 filas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabla de Productos -->
+                <div class="table-container">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th width="60">#</th>
+                                <th width="80">Foto</th>
+                                <th>Nombre del Producto</th>
+                                <th width="120">Color</th>
+                                <th width="100">Stock</th>
+                                <th width="120">Costo</th>
+                                <th width="120">Precio Venta</th>
+                                <th width="100">Ganancia</th>
+                                <th width="150">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <!-- Los productos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Mostrando <span id="showingStart">0</span> a <span id="showingEnd">0</span> de <span id="totalProducts">0</span> productos
+                    </div>
+                    <div class="pagination" id="paginationButtons">
+                        <!-- Los botones de paginación se generarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Agregar/Editar Producto -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fas fa-plus-circle"></i> Agregar Producto</h3>
+                <button class="modal-close" onclick="closeProductModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm" onsubmit="saveProduct(event)">
+                    <input type="hidden" id="productId" value="">
+                    
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="productName">
+                                <i class="fas fa-tag"></i> Nombre del Producto *
+                            </label>
+                            <input type="text" id="productName" required placeholder="Ej: Camiseta Deportiva">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productColor">
+                                <i class="fas fa-palette"></i> Color *
+                            </label>
+                            <input type="text" id="productColor" required placeholder="Ej: Rojo, Azul, Negro">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productStock">
+                                <i class="fas fa-boxes"></i> Stock *
+                            </label>
+                            <input type="number" id="productStock" required min="0" placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productCost">
+                                <i class="fas fa-dollar-sign"></i> Costo (BOB) *
+                            </label>
+                            <input type="number" id="productCost" required min="0" step="0.01" placeholder="0,00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productPrice">
+                                <i class="fas fa-money-bill-wave"></i> Precio de Venta (BOB) *
+                            </label>
+                            <input type="number" id="productPrice" required min="0" step="0.01" placeholder="0,00">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="productImage">
+                                <i class="fas fa-image"></i> Foto del Producto (Máx. 10MB)
+                            </label>
+                            <div class="image-upload-container">
+                                <input type="file" id="productImage" accept="image/*" onchange="previewImage(event)">
+                                <div class="image-preview" id="imagePreview">
+                                    <i class="fas fa-camera"></i>
+                                    <p>Click para seleccionar imagen</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeProductModal()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Guardar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input oculto para importar archivo -->
+    <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleImportFile(event)">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+    <script src="inventario.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>AIJMIROSHOP - Selección de Rol</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+    
+    <div class="container">
+        <div class="role-selection-card">
+            <div class="header">
+                <i class="fas fa-store"></i>
+                <h1>AIJMIROSHOP</h1>
+                <p>Seleccione su rol para continuar</p>
+            </div>
+            
+            <div class="role-options">
+                <div class="role-card" onclick="selectRole('admin')">
+                    <div class="role-icon admin-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h2>Administrador</h2>
+                    <p>Acceso completo al sistema</p>
+                </div>
+                
+                <div class="role-card" onclick="selectRole('operator')">
+                    <div class="role-icon operator-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h2>Operador</h2>
+                    <p>Acceso a operaciones diarias</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

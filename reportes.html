@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ec4899">
+    <title>Reportes - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="reportes.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-chart-bar"></i> Reportes y Análisis</h2>
+                        <p>Visualiza estadísticas y análisis del negocio</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <!-- Filtro de Período -->
+                <div class="period-selector">
+                    <div class="period-group">
+                        <label><i class="fas fa-calendar-alt"></i> Período de Análisis:</label>
+                        <div class="period-buttons">
+                            <button class="period-btn active" onclick="changePeriod('7days')">Últimos 7 días</button>
+                            <button class="period-btn" onclick="changePeriod('30days')">Últimos 30 días</button>
+                            <button class="period-btn" onclick="changePeriod('90days')">Últimos 90 días</button>
+                            <button class="period-btn" onclick="changePeriod('year')">Este año</button>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="generatePDF()">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+
+                <!-- Resumen General -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="summary-info">
+                            <span class="summary-label">Ingresos Totales</span>
+                            <span class="summary-value" id="totalRevenue">Bs. 0,00</span>
+                            <span class="summary-change positive" id="revenueChange">+0%</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="summary-info">
+                            <span class="summary-label">Total Ventas</span>
+                            <span class="summary-value" id="totalSales">0</span>
+                            <span class="summary-change positive" id="salesChange">+0%</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="summary-info">
+                            <span class="summary-label">Ticket Promedio</span>
+                            <span class="summary-value" id="avgTicket">Bs. 0,00</span>
+                            <span class="summary-change neutral" id="ticketChange">0%</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="summary-info">
+                            <span class="summary-label">Productos Vendidos</span>
+                            <span class="summary-value" id="totalProducts">0</span>
+                            <span class="summary-change positive" id="productsChange">+0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos Row 1 -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-chart-line"></i> Ventas por Período</h3>
+                            <select id="salesPeriodType" onchange="updateSalesChart()">
+                                <option value="daily">Diario</option>
+                                <option value="weekly">Semanal</option>
+                                <option value="monthly" selected>Mensual</option>
+                            </select>
+                        </div>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-credit-card"></i> Métodos de Pago</h3>
+                        </div>
+                        <canvas id="paymentMethodsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráficos Row 2 -->
+                <div class="charts-row">
+                    <div class="chart-container full-width">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-trophy"></i> Top 10 Productos Más Vendidos</h3>
+                        </div>
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráficos Row 3 -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-users"></i> Top 10 Clientes</h3>
+                        </div>
+                        <canvas id="topClientsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-user-tie"></i> Ventas por Usuario</h3>
+                        </div>
+                        <canvas id="userSalesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico Row 4 -->
+                <div class="charts-row">
+                    <div class="chart-container full-width">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-boxes"></i> Estado del Inventario</h3>
+                        </div>
+                        <canvas id="inventoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabla de Análisis Detallado -->
+                <div class="analysis-table">
+                    <h3><i class="fas fa-table"></i> Análisis Detallado por Producto</h3>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Unidades Vendidas</th>
+                                    <th>Ingresos</th>
+                                    <th>Stock Actual</th>
+                                    <th>Rotación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysisTableBody">
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+    <script src="reportes.js"></script>
+</body>
+</html>

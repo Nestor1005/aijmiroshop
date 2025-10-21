@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2563eb">
+    <title>Dashboard - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="dashboard-content-new">
+                <div class="welcome-section">
+                    <h2>Panel de Control</h2>
+                    <p>Seleccione un módulo para comenzar</p>
+                </div>
+
+                <div class="modules-grid">
+                    <!-- Inventario -->
+                    <div class="module-card" onclick="openModule('inventario')">
+                        <div class="module-icon inventario-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Inventario</h3>
+                            <p>Gestión de productos y stock</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Clientes -->
+                    <div class="module-card" onclick="openModule('clientes')">
+                        <div class="module-icon clientes-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Clientes</h3>
+                            <p>Gestión de clientes y contactos</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Registrar Venta -->
+                    <div class="module-card" onclick="openModule('ventas')">
+                        <div class="module-icon ventas-icon">
+                            <i class="fas fa-cash-register"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Registrar Venta</h3>
+                            <p>Realizar nueva venta</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Historial -->
+                    <div class="module-card" onclick="openModule('historial')">
+                        <div class="module-icon historial-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Historial</h3>
+                            <p>Historial de ventas efectuadas</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Reportes -->
+                    <div class="module-card" onclick="openModule('reportes')">
+                        <div class="module-icon reportes-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Reportes</h3>
+                            <p>Análisis y estadísticas</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Configuraciones -->
+                    <div class="module-card" onclick="openModule('configuraciones')">
+                        <div class="module-icon configuraciones-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Configuraciones</h3>
+                            <p>Configuración del sistema</p>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

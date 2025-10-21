@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#10b981">
+    <title>Registrar Venta - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="ventas.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-cash-register"></i> Registrar Venta</h2>
+                        <p>Registro de ventas y facturación</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <div class="sales-container">
+                    <!-- Panel Izquierdo: Selección de Productos -->
+                    <div class="left-panel">
+                        <!-- Búsqueda de Productos -->
+                        <div class="search-section">
+                            <h3><i class="fas fa-search"></i> Buscar Producto</h3>
+                            <div class="search-box">
+                                <i class="fas fa-barcode"></i>
+                                <input type="text" id="productSearch" placeholder="Buscar por nombre, código o escanear código de barras..." onkeyup="searchProducts()">
+                            </div>
+                        </div>
+
+                        <!-- Lista de Productos Disponibles -->
+                        <div class="products-list-section">
+                            <h3><i class="fas fa-boxes"></i> Productos Disponibles</h3>
+                            <div class="products-grid" id="productsGrid">
+                                <!-- Los productos se cargarán dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Carrito y Resumen -->
+                    <div class="right-panel">
+                        <!-- Información del Cliente -->
+                        <div class="client-section">
+                            <h3><i class="fas fa-user"></i> Cliente</h3>
+                            <div class="client-selector">
+                                <select id="clientSelect" onchange="selectClient()">
+                                    <option value="">Seleccionar cliente...</option>
+                                    <option value="general">Cliente General</option>
+                                </select>
+                                <button class="btn-icon" onclick="openQuickClientModal()" title="Agregar cliente rápido">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            </div>
+                            <div id="clientInfo" class="client-info" style="display: none;">
+                                <!-- Información del cliente seleccionado -->
+                            </div>
+                        </div>
+
+                        <!-- Carrito de Compras -->
+                        <div class="cart-section">
+                            <h3><i class="fas fa-shopping-cart"></i> Carrito de Venta</h3>
+                            <div class="cart-items" id="cartItems">
+                                <div class="empty-cart">
+                                    <i class="fas fa-shopping-basket"></i>
+                                    <p>No hay productos en el carrito</p>
+                                    <small>Busca y agrega productos para comenzar</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen de Venta -->
+                        <div class="summary-section">
+                            <div class="summary-row">
+                                <span>Subtotal:</span>
+                                <strong id="subtotal">Bs. 0,00</strong>
+                            </div>
+                            <div class="summary-row">
+                                <span>Descuento:</span>
+                                <div class="discount-input">
+                                    <input type="number" id="discountAmount" value="0" min="0" step="0.01" onchange="calculateTotal()">
+                                    <span>Bs.</span>
+                                </div>
+                            </div>
+                            <div class="summary-row">
+                                <span>Envío:</span>
+                                <div class="discount-input">
+                                    <input type="number" id="shippingCost" value="0" min="0" step="0.01" onchange="calculateTotal()">
+                                    <span>Bs.</span>
+                                </div>
+                            </div>
+                            <div class="summary-row total">
+                                <span>TOTAL:</span>
+                                <strong id="total">Bs. 0,00</strong>
+                            </div>
+                        </div>
+
+                        <!-- Lugar de Envío -->
+                        <div class="shipping-section">
+                            <h4><i class="fas fa-map-marker-alt"></i> Lugar de Envío</h4>
+                            <div class="form-group">
+                                <input type="text" id="shippingAddress" placeholder="Ej: La Paz, Zona Sur, Calle 21 #123">
+                            </div>
+                        </div>
+
+                        <!-- Método de Pago -->
+                        <div class="payment-section">
+                            <h4><i class="fas fa-credit-card"></i> Método de Pago</h4>
+                            <div class="payment-methods">
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="efectivo" checked onchange="togglePaymentFields()">
+                                    <span><i class="fas fa-money-bill-wave"></i> Efectivo</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="qr" onchange="togglePaymentFields()">
+                                    <span><i class="fas fa-qrcode"></i> QR</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="transferencia" onchange="togglePaymentFields()">
+                                    <span><i class="fas fa-exchange-alt"></i> Transferencia</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="otro" onchange="togglePaymentFields()">
+                                    <span><i class="fas fa-ellipsis-h"></i> Otro</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Campo para efectivo -->
+                            <div id="cashFields" class="payment-fields">
+                                <div class="form-group">
+                                    <label>Monto Recibido:</label>
+                                    <input type="number" id="cashReceived" placeholder="0.00" step="0.01" min="0" onkeyup="calculateChange()">
+                                </div>
+                                <div class="change-display" id="changeDisplay" style="display: none;">
+                                    <span>Cambio:</span>
+                                    <strong id="changeAmount">Bs. 0,00</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="action-buttons">
+                            <button class="btn-cancel" onclick="clearSale()">
+                                <i class="fas fa-times"></i> Cancelar Venta
+                            </button>
+                            <button class="btn-complete" onclick="completeSale()">
+                                <i class="fas fa-check"></i> Completar Venta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Cliente Rápido -->
+    <div id="quickClientModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> Agregar Cliente Rápido</h3>
+                <button class="modal-close" onclick="closeQuickClientModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="quickClientForm" onsubmit="saveQuickClient(event)">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nombre del Cliente *</label>
+                        <input type="text" id="quickClientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-id-card"></i> CI</label>
+                        <input type="text" id="quickClientCI">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="quickClientPhone">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeQuickClientModal()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Venta -->
+    <div id="confirmSaleModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Confirmar Venta</h3>
+                <button class="modal-close" onclick="closeConfirmModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="sale-summary" id="saleSummaryContent">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeConfirmModal()">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <button type="button" class="btn-complete" onclick="confirmAndCaptureSale()">
+                        <i class="fas fa-camera"></i> Confirmar y Capturar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+    <script src="ventas.js"></script>
+</body>
+</html>

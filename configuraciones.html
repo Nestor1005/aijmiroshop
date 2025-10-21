@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#64748b">
+    <title>Configuraciones - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="configuraciones.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-cog"></i> Configuraciones</h2>
+                        <p>Gestiona usuarios y configuraciones del sistema</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <!-- Tabs de Configuración -->
+                <div class="config-tabs">
+                    <button class="tab-btn active" onclick="switchTab('admin')">
+                        <i class="fas fa-user-shield"></i> Configuración Admin
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('operators')">
+                        <i class="fas fa-users-cog"></i> Gestión de Operarios
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('ticket')">
+                        <i class="fas fa-receipt"></i> Configuración de Ticket
+                    </button>
+                </div>
+
+                <!-- Tab: Configuración Admin -->
+                <div id="adminTab" class="tab-content active">
+                    <div class="config-section">
+                        <h3><i class="fas fa-user-shield"></i> Cambiar Usuario y Contraseña del Administrador</h3>
+                        <p class="section-description">Actualiza las credenciales de acceso del administrador del sistema</p>
+                        
+                        <form id="adminForm" onsubmit="updateAdminCredentials(event)">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label for="adminCurrentPassword">
+                                        <i class="fas fa-lock"></i> Contraseña Actual *
+                                    </label>
+                                    <input type="password" id="adminCurrentPassword" required placeholder="Ingresa tu contraseña actual">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="adminNewUsername">
+                                        <i class="fas fa-user"></i> Nuevo Usuario
+                                    </label>
+                                    <input type="text" id="adminNewUsername" placeholder="Ingresa nuevo nombre de usuario">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="adminNewName">
+                                        <i class="fas fa-id-card"></i> Nuevo Nombre Completo
+                                    </label>
+                                    <input type="text" id="adminNewName" placeholder="Ingresa nuevo nombre completo">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="adminNewPassword">
+                                        <i class="fas fa-key"></i> Nueva Contraseña
+                                    </label>
+                                    <input type="password" id="adminNewPassword" placeholder="Ingresa nueva contraseña">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="adminConfirmPassword">
+                                        <i class="fas fa-check-circle"></i> Confirmar Contraseña
+                                    </label>
+                                    <input type="password" id="adminConfirmPassword" placeholder="Confirma la nueva contraseña">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Información Actual -->
+                    <div class="info-card">
+                        <h4><i class="fas fa-info-circle"></i> Información Actual del Administrador</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Usuario:</span>
+                                <span class="info-value" id="currentUsername">admin</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Nombre:</span>
+                                <span class="info-value" id="currentName">Administrador</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Rol:</span>
+                                <span class="info-value">Administrador</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Gestión de Operarios -->
+                <div id="operatorsTab" class="tab-content">
+                    <div class="config-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users-cog"></i> Operarios del Sistema</h3>
+                            <button class="btn-primary" onclick="openAddOperatorModal()">
+                                <i class="fas fa-user-plus"></i> Agregar Operario
+                            </button>
+                        </div>
+                        
+                        <!-- Tabla de Operarios -->
+                        <div class="table-container">
+                            <table class="operators-table">
+                                <thead>
+                                    <tr>
+                                        <th width="60">#</th>
+                                        <th>Usuario</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Creación</th>
+                                        <th width="150">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="operatorsTableBody">
+                                    <!-- Los operarios se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Configuración de Ticket -->
+                <div id="ticketTab" class="tab-content">
+                    <div class="config-section">
+                        <h3><i class="fas fa-receipt"></i> Personalizar Ticket de Venta</h3>
+                        <p class="section-description">Configura la información que aparecerá en los tickets de venta</p>
+                        
+                        <form id="ticketForm" onsubmit="updateTicketSettings(event)">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label for="ticketCompanyName">
+                                        <i class="fas fa-store"></i> Nombre de la Empresa *
+                                    </label>
+                                    <input type="text" id="ticketCompanyName" required placeholder="AIJMIROSHOP">
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="ticketSubtitle">
+                                        <i class="fas fa-tag"></i> Subtítulo del Ticket *
+                                    </label>
+                                    <input type="text" id="ticketSubtitle" required placeholder="Sistema de Gestión de Inventario">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ticketStartNumber">
+                                        <i class="fas fa-hashtag"></i> Número Inicial de Venta *
+                                    </label>
+                                    <input type="number" id="ticketStartNumber" required min="1" placeholder="1">
+                                    <small>Define desde qué número comenzarán las ventas</small>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="ticketFooterMessage">
+                                        <i class="fas fa-comment"></i> Mensaje de Despedida *
+                                    </label>
+                                    <input type="text" id="ticketFooterMessage" required placeholder="¡Gracias por su compra!">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-save">
+                                    <i class="fas fa-save"></i> Guardar Configuración
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="resetTicketSettings()">
+                                    <i class="fas fa-undo"></i> Restaurar Valores Predeterminados
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Vista Previa del Ticket -->
+                        <div class="ticket-preview-section">
+                            <h4><i class="fas fa-eye"></i> Vista Previa del Ticket</h4>
+                            <div class="ticket-preview">
+                                <div class="ticket-header-preview">
+                                    <h2 id="previewCompanyName">AIJMIROSHOP</h2>
+                                    <p id="previewSubtitle">Sistema de Gestión de Inventario</p>
+                                    <p><strong>Venta #<span id="previewStartNumber">1</span></strong></p>
+                                    <p class="preview-date">21/10/2025, 04:01:06 p. m.</p>
+                                </div>
+                                <div class="ticket-divider"></div>
+                                <p><strong>Cliente:</strong> Cliente General</p>
+                                <p><strong>Atendido por:</strong> Administrador</p>
+                                <div class="ticket-divider"></div>
+                                <div class="ticket-item-preview">
+                                    <p><strong>Producto Ejemplo</strong></p>
+                                    <p>Cantidad: 1 × Bs. 100,00</p>
+                                </div>
+                                <div class="ticket-divider"></div>
+                                <p><strong>TOTAL: Bs. 100,00</strong></p>
+                                <div class="ticket-divider"></div>
+                                <p class="ticket-footer-preview" id="previewFooterMessage">¡Gracias por su compra!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Agregar/Editar Operario -->
+    <div id="operatorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="operatorModalTitle"><i class="fas fa-user-plus"></i> Agregar Operario</h3>
+                <button class="modal-close" onclick="closeOperatorModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="operatorForm" onsubmit="saveOperator(event)">
+                    <input type="hidden" id="operatorId" value="">
+                    
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="operatorUsername">
+                                <i class="fas fa-user"></i> Usuario *
+                            </label>
+                            <input type="text" id="operatorUsername" required placeholder="Ej: operador1">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="operatorName">
+                                <i class="fas fa-id-card"></i> Nombre Completo *
+                            </label>
+                            <input type="text" id="operatorName" required placeholder="Ej: Juan Pérez">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="operatorPassword">
+                                <i class="fas fa-key"></i> Contraseña *
+                            </label>
+                            <input type="password" id="operatorPassword" required placeholder="Mínimo 4 caracteres">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="operatorConfirmPassword">
+                                <i class="fas fa-check-circle"></i> Confirmar Contraseña *
+                            </label>
+                            <input type="password" id="operatorConfirmPassword" required placeholder="Confirma la contraseña">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeOperatorModal()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Guardar Operario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="configuraciones.js"></script>
+</body>
+</html>

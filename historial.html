@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#8b5cf6">
+    <title>Historial de Ventas - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="historial.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-history"></i> Historial de Ventas</h2>
+                        <p>Consulta y gestiona el registro de todas las ventas realizadas</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <!-- Filtros y Búsqueda -->
+                <div class="filters-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por ID, cliente, usuario..." oninput="applyFilters()">
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar"></i> Fecha Desde:</label>
+                            <input type="date" id="dateFrom" onchange="applyFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar"></i> Fecha Hasta:</label>
+                            <input type="date" id="dateTo" onchange="applyFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-credit-card"></i> Método de Pago:</label>
+                            <select id="paymentFilter" onchange="applyFilters()">
+                                <option value="">Todos</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="qr">QR</option>
+                                <option value="transferencia">Transferencia</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <button class="btn-filter" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <button class="btn-clear" onclick="clearFilters()">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                        <button id="clearHistoryBtn" class="btn-danger" onclick="clearAllSales()">
+                            <i class="fas fa-trash-alt"></i> Vaciar Historial
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estadísticas Rápidas -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Ventas</span>
+                            <span class="stat-value" id="totalSales">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Ingresos Totales</span>
+                            <span class="stat-value" id="totalRevenue">Bs. 0,00</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Ventas Hoy</span>
+                            <span class="stat-value" id="todaySales">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Ticket Promedio</span>
+                            <span class="stat-value" id="avgTicket">Bs. 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Ventas -->
+                <div class="table-container">
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Productos</th>
+                                    <th>Subtotal</th>
+                                    <th>Descuento</th>
+                                    <th>Envío</th>
+                                    <th>Total</th>
+                                    <th>Método Pago</th>
+                                    <th>Usuario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesTableBody">
+                                <tr>
+                                    <td colspan="11" class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>No hay ventas registradas</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Mostrando <span id="showingStart">0</span> - <span id="showingEnd">0</span> de <span id="totalRecords">0</span> ventas
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn-page" id="prevPage" onclick="previousPage()">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <div class="page-numbers" id="pageNumbers"></div>
+                        <button class="btn-page" id="nextPage" onclick="nextPage()">
+                            Siguiente <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="items-per-page">
+                        <label>Mostrar:</label>
+                        <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Detalle de Venta -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-receipt"></i> Detalle de Venta</h3>
+                <button class="modal-close" onclick="closeDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="saleDetailContent">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeDetailModal()">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+                <button type="button" class="btn-download" onclick="downloadTicketAgain()">
+                    <i class="fas fa-download"></i> Descargar Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+    <script src="historial.js"></script>
+</body>
+</html>

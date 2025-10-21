@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#06b6d4">
+    <title>Clientes - AIJMIROSHOP</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="clientes.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sistema de Notificaciones -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <div class="dashboard-container-new">
+        <!-- Header Principal -->
+        <header class="main-header">
+            <div class="header-left">
+                <div class="company-logo">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div class="company-info">
+                    <h1>AIJMIROSHOP</h1>
+                    <p>Sistema de Gestión de Inventario</p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-time">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield" id="userIcon"></i>
+                    </div>
+                    <div class="user-details">
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" class="role-tag">Admin</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content-new">
+            <div class="module-header">
+                <div class="module-title">
+                    <button class="btn-back" onclick="goToDashboard()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h2><i class="fas fa-users"></i> Clientes</h2>
+                        <p>Gestión de clientes y contactos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-content">
+                <!-- Panel de Acciones -->
+                <div class="actions-panel">
+                    <div class="actions-left">
+                        <button class="btn-primary" onclick="openAddClientModal()">
+                            <i class="fas fa-user-plus"></i> Agregar Cliente
+                        </button>
+                        <button class="btn-danger" onclick="clearClients()">
+                            <i class="fas fa-trash-alt"></i> Vaciar Clientes
+                        </button>
+                    </div>
+                    <div class="actions-right">
+                        <button class="btn-secondary" onclick="downloadClientTemplate()">
+                            <i class="fas fa-file-download"></i> Descargar Formato
+                        </button>
+                        <button class="btn-secondary" onclick="importClients()">
+                            <i class="fas fa-file-import"></i> Importar
+                        </button>
+                        <button class="btn-secondary" onclick="exportClients()">
+                            <i class="fas fa-file-export"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Buscador y Filtros -->
+                <div class="search-panel">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar clientes por nombre, CI o teléfono..." onkeyup="searchClients()">
+                    </div>
+                    <div class="rows-selector">
+                        <label>Mostrar:</label>
+                        <select id="rowsPerPage" onchange="changeRowsPerPage()">
+                            <option value="5" selected>5 filas</option>
+                            <option value="10">10 filas</option>
+                            <option value="50">50 filas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabla de Clientes -->
+                <div class="table-container">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th width="60">#</th>
+                                <th>Nombre del Cliente</th>
+                                <th width="150">CI</th>
+                                <th width="80">Compl.</th>
+                                <th width="150">Celular/Teléfono</th>
+                                <th>Dirección</th>
+                                <th width="150">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <!-- Los clientes se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Mostrando <span id="showingStart">0</span> a <span id="showingEnd">0</span> de <span id="totalClients">0</span> clientes
+                    </div>
+                    <div class="pagination" id="paginationButtons">
+                        <!-- Los botones de paginación se generarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Agregar/Editar Cliente -->
+    <div id="clientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"><i class="fas fa-user-plus"></i> Agregar Cliente</h3>
+                <button class="modal-close" onclick="closeClientModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm" onsubmit="saveClient(event)">
+                    <input type="hidden" id="clientId" value="">
+                    
+                    <!-- Datos Generales -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-user"></i> Datos Generales</h4>
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label for="clientName">
+                                    <i class="fas fa-user"></i> Nombre del Cliente *
+                                </label>
+                                <input type="text" id="clientName" required placeholder="Ej: Juan Pérez López">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="clientCI">
+                                    <i class="fas fa-id-card"></i> Carnet de Identidad *
+                                </label>
+                                <input type="text" id="clientCI" required placeholder="Ej: 12345678">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="clientComplement">
+                                    <i class="fas fa-hashtag"></i> Complemento del CI
+                                </label>
+                                <input type="text" id="clientComplement" placeholder="Ej: 1A" maxlength="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Adicionales -->
+                    <div class="form-section">
+                        <h4><i class="fas fa-info-circle"></i> Datos Adicionales</h4>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="clientPhone">
+                                    <i class="fas fa-phone"></i> Celular o Teléfono
+                                </label>
+                                <input type="tel" id="clientPhone" placeholder="Ej: 70123456">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="clientAddress">
+                                    <i class="fas fa-map-marker-alt"></i> Dirección
+                                </label>
+                                <input type="text" id="clientAddress" placeholder="Ej: Av. América #123">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeClientModal()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Guardar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input oculto para importar archivo -->
+    <input type="file" id="importFileInput" accept=".xlsx" style="display: none;" onchange="handleImportFile(event)">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+    <script src="clientes.js"></script>
+</body>
+</html>
