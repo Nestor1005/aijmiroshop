@@ -327,7 +327,10 @@ initializeUsers();
 
 // ==================== ROLE SELECTION PAGE ====================
 function selectRole(role) {
+    console.log('Seleccionando rol:', role);
+    localStorage.setItem('selectedRole', role);
     sessionStorage.setItem('selectedRole', role);
+    console.log('Rol guardado, redirigiendo a login...');
     window.location.href = 'login.html';
 }
 
@@ -354,8 +357,10 @@ function handleLogin(event) {
     
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const selectedRole = sessionStorage.getItem('selectedRole');
+    const selectedRole = sessionStorage.getItem('selectedRole') || localStorage.getItem('selectedRole');
     const errorMessage = document.getElementById('errorMessage');
+    
+    console.log('Intentando login con rol:', selectedRole);
     
     // Obtener usuarios de localStorage
     const savedUsers = JSON.parse(localStorage.getItem('users')) || [];
@@ -388,9 +393,12 @@ function handleLogin(event) {
 
 // Inicializar página de login
 function initLoginPage() {
-    const selectedRole = sessionStorage.getItem('selectedRole');
+    const selectedRole = sessionStorage.getItem('selectedRole') || localStorage.getItem('selectedRole');
+    
+    console.log('InitLoginPage - Rol seleccionado:', selectedRole);
     
     if (!selectedRole) {
+        console.log('No hay rol seleccionado, redirigiendo a index...');
         window.location.href = 'index.html';
         return;
     }
