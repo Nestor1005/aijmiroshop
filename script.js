@@ -393,7 +393,17 @@ function handleLogin(event) {
 
 // Inicializar página de login
 function initLoginPage() {
-    const selectedRole = sessionStorage.getItem('selectedRole') || localStorage.getItem('selectedRole');
+    // Intentar obtener el rol de múltiples fuentes
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleFromUrl = urlParams.get('role');
+    
+    let selectedRole = roleFromUrl || sessionStorage.getItem('selectedRole') || localStorage.getItem('selectedRole');
+    
+    // Si viene de la URL, guardarlo
+    if (roleFromUrl) {
+        localStorage.setItem('selectedRole', roleFromUrl);
+        sessionStorage.setItem('selectedRole', roleFromUrl);
+    }
     
     console.log('InitLoginPage - Rol seleccionado:', selectedRole);
     

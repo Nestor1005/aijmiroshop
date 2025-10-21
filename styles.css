@@ -215,6 +215,12 @@ body {
     gap: 30px;
 }
 
+.role-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
 .role-card {
     background: var(--light-bg);
     border-radius: 15px;

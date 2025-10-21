@@ -24,21 +24,25 @@
             </div>
             
             <div class="role-options">
-                <div class="role-card" onclick="selectRole('admin')">
-                    <div class="role-icon admin-icon">
-                        <i class="fas fa-user-shield"></i>
+                <a href="login.html?role=admin" class="role-card-link" onclick="localStorage.setItem('selectedRole', 'admin'); sessionStorage.setItem('selectedRole', 'admin');">
+                    <div class="role-card">
+                        <div class="role-icon admin-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <h2>Administrador</h2>
+                        <p>Acceso completo al sistema</p>
                     </div>
-                    <h2>Administrador</h2>
-                    <p>Acceso completo al sistema</p>
-                </div>
+                </a>
                 
-                <div class="role-card" onclick="selectRole('operator')">
-                    <div class="role-icon operator-icon">
-                        <i class="fas fa-user"></i>
+                <a href="login.html?role=operator" class="role-card-link" onclick="localStorage.setItem('selectedRole', 'operator'); sessionStorage.setItem('selectedRole', 'operator');">
+                    <div class="role-card">
+                        <div class="role-icon operator-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h2>Operador</h2>
+                        <p>Acceso a operaciones diarias</p>
                     </div>
-                    <h2>Operador</h2>
-                    <p>Acceso a operaciones diarias</p>
-                </div>
+                </a>
             </div>
         </div>
     </div>
