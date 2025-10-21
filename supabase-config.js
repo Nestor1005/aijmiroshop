@@ -2,14 +2,10 @@
 // Configuración de Supabase
 // =====================================================
 
-// Variables de entorno (deben configurarse en Vercel)
-const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 
-                     (typeof process !== 'undefined' ? process.env?.SUPABASE_URL : null) || 
-                     localStorage.getItem('SUPABASE_URL');
-
-const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 
-                          (typeof process !== 'undefined' ? process.env?.SUPABASE_ANON_KEY : null) || 
-                          localStorage.getItem('SUPABASE_ANON_KEY');
+// NOTA: Las variables se inyectan desde Vercel en tiempo de build
+// Si estás en desarrollo local, cámbialas aquí temporalmente
+const SUPABASE_URL = 'https://zfssyuieasxmukrazmtr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpmc3N5dWllYXN4bXVrcmF6bXRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNzg3MjcsImV4cCI6MjA3NjY1NDcyN30.cLJWda-vHs8tQw2klWBNZloOm2MHwuKq3_8t4SCIdMA';
 
 // Cliente de Supabase (se inicializa cuando se carga la librería)
 let supabase = null;
