@@ -28,9 +28,10 @@ function initSales() {
     if (userIcon) userIcon.className = user.role === 'admin' ? 'fas fa-user-shield' : 'fas fa-user';
     
     updateDateTime();
-    loadData();
-    renderProducts();
-    loadClientsToSelect();
+    loadData().then(() => {
+        renderProducts();
+        loadClientsToSelect();
+    });
     
     // Notificación de bienvenida
     setTimeout(() => {
@@ -38,60 +39,17 @@ function initSales() {
     }, 500);
 }
 
-// Cargar datos desde localStorage
-function loadData() {
-    // Cargar productos
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-        try {
-            products = JSON.parse(savedProducts);
-        } catch (error) {
-            console.error('Error al cargar productos:', error);
-            products = [];
-        }
-    }
-    
-    // Cargar clientes
-    const savedClients = localStorage.getItem('clients');
-    if (savedClients) {
-        try {
-            clients = JSON.parse(savedClients);
-        } catch (error) {
-            console.error('Error al cargar clientes:', error);
-            clients = [];
-        }
-    }
-    
-    // Cargar ventas
-    const savedSales = localStorage.getItem('sales');
-    if (savedSales) {
-        try {
-            sales = JSON.parse(savedSales);
-        } catch (error) {
-            console.error('Error al cargar ventas:', error);
-            sales = [];
-        }
-    } else {
+// Cargar datos desde Supabase
+async function loadData() {
+    try {
+        products = await window.StorageAPI.getProducts();
+        clients = await window.StorageAPI.getClients();
+        sales = await window.StorageAPI.getSales();
+    } catch (error) {
+        console.error('Error al cargar datos:', error);
+        products = [];
+        clients = [];
         sales = [];
-    }
-}
-
-// Guardar ventas
-function saveSales() {
-    try {
-        localStorage.setItem('sales', JSON.stringify(sales));
-    } catch (error) {
-        console.error('Error al guardar ventas:', error);
-        Notification.error('Error al guardar la venta.', 'Error');
-    }
-}
-
-// Actualizar productos en localStorage
-function updateProducts() {
-    try {
-        localStorage.setItem('products', JSON.stringify(products));
-    } catch (error) {
-        console.error('Error al actualizar productos:', error);
     }
 }
 
@@ -375,7 +333,7 @@ function closeQuickClientModal() {
     if (form) form.reset();
 }
 
-function saveQuickClient(event) {
+async function saveQuickClient(event) {
     event.preventDefault();
     
     const name = document.getElementById('quickClientName').value.trim();
@@ -399,7 +357,7 @@ function saveQuickClient(event) {
     clients.push(newClient);
     
     try {
-        localStorage.setItem('clients', JSON.stringify(clients));
+        await window.StorageAPI.saveClient(newClient);
         loadClientsToSelect();
         
         // Seleccionar el cliente recién creado
@@ -519,7 +477,7 @@ function closeConfirmModal() {
 }
 
 // Confirmar y capturar venta
-function confirmAndCaptureSale() {
+async function confirmAndCaptureSale() {
     const subtotalText = document.getElementById('subtotal').textContent;
     const subtotal = parseFloat(subtotalText.replace('Bs. ', '').replace(/\./g, '').replace(',', '.'));
     const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
@@ -530,8 +488,8 @@ function confirmAndCaptureSale() {
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
     
     // Obtener configuración de ticket para número inicial
-    const ticketSettings = JSON.parse(localStorage.getItem('ticketSettings')) || { startNumber: 1 };
-    const startNumber = ticketSettings.startNumber || 1;
+    const ticketSettings = await window.StorageAPI.getSettings();
+    const startNumber = ticketSettings?.ticketStartNumber || 1;
     
     // Calcular ID: si hay ventas, obtener el máximo y sumar 1, pero nunca menor que startNumber
     let newId;
@@ -557,18 +515,18 @@ function confirmAndCaptureSale() {
         user: JSON.parse(sessionStorage.getItem('currentUser')).name
     };
     
-    // Actualizar stock de productos
-    cart.forEach(item => {
+    // Actualizar stock de productos y guardar en Supabase
+    for (const item of cart) {
         const product = products.find(p => p.id === item.id);
         if (product) {
             product.stock -= item.quantity;
+            await window.StorageAPI.saveProduct(product);
         }
-    });
+    }
     
-    // Guardar datos
+    // Guardar venta en Supabase
     sales.push(sale);
-    saveSales();
-    updateProducts();
+    await window.StorageAPI.saveSale(sale);
     
     // Capturar imagen del ticket antes de limpiar
     captureTicket(sale);
@@ -592,9 +550,9 @@ function confirmAndCaptureSale() {
 }
 
 // Capturar ticket como imagen y descargar automáticamente
-function captureTicket(sale) {
+async function captureTicket(sale) {
     // Obtener configuración del ticket
-    const ticketSettings = JSON.parse(localStorage.getItem('ticketSettings')) || {
+    const ticketSettings = await window.StorageAPI.getSettings();
         companyName: 'AIJMIROSHOP',
         subtitle: 'Sistema de Gestión de Inventario',
         footerMessage: '¡Gracias por su compra!'

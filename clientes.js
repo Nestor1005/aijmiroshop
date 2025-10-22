@@ -37,8 +37,9 @@ function initClients() {
     if (userIcon) userIcon.className = user.role === 'admin' ? 'fas fa-user-shield' : 'fas fa-user';
     
     updateDateTime();
-    loadClients();
-    renderClients();
+    loadClients().then(() => {
+        renderClients();
+    });
     
     // Notificación de bienvenida
     setTimeout(() => {
@@ -46,21 +47,13 @@ function initClients() {
     }, 500);
 }
 
-// Cargar clientes desde localStorage
-function loadClients() {
-    const savedClients = localStorage.getItem('clients');
-    if (savedClients) {
-        try {
-            clients = JSON.parse(savedClients);
-        } catch (error) {
-            console.error('Error al cargar clientes:', error);
-            clients = getDefaultClients();
-            saveClients();
-        }
-    } else {
-        // Datos de ejemplo
-        clients = getDefaultClients();
-        saveClients();
+// Cargar clientes desde Supabase
+async function loadClients() {
+    try {
+        clients = await window.StorageAPI.getClients();
+    } catch (error) {
+        console.error('Error al cargar clientes:', error);
+        clients = [];
     }
     filteredClients = [...clients];
 }
@@ -100,20 +93,10 @@ function saveClients() {
     try {
         localStorage.setItem('clients', JSON.stringify(clients));
     } catch (error) {
-        console.error('Error al guardar clientes:', error);
-        Notification.error('Error al guardar los datos.', 'Error');
-    }
+    ];
 }
 
 // Renderizar clientes en la tabla
-function renderClients() {
-    const tbody = document.getElementById('clientsTableBody');
-    if (!tbody) return;
-    
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const paginatedClients = filteredClients.slice(start, end);
-    
     if (paginatedClients.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -295,7 +278,7 @@ function closeClientModal() {
 }
 
 // Guardar cliente
-function saveClient(event) {
+async function saveClient(event) {
     event.preventDefault();
     
     const nameInput = document.getElementById('clientName');
@@ -351,16 +334,17 @@ function saveClient(event) {
                 ...clients[index], 
                 ...clientData 
             };
+            await window.StorageAPI.saveClient(clients[index]);
             Notification.success(`Cliente "${clientData.name}" actualizado correctamente`, 'Éxito');
         }
     } else {
         // Agregar nuevo cliente
         clientData.id = clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1;
         clients.push(clientData);
+        await window.StorageAPI.saveClient(clientData);
         Notification.success(`Cliente "${clientData.name}" agregado correctamente`, 'Éxito');
     }
     
-    saveClients();
     filteredClients = [...clients];
     renderClients();
     closeClientModal();
@@ -397,7 +381,7 @@ function editClient(id) {
 }
 
 // Eliminar cliente
-function deleteClient(id) {
+async function deleteClient(id) {
     const client = clients.find(c => c.id === id);
     if (!client) {
         Notification.error('Cliente no encontrado', 'Error');
@@ -407,9 +391,9 @@ function deleteClient(id) {
     ConfirmDialog.show(
         `¿Está seguro que desea eliminar al cliente "${client.name}"?`,
         'Eliminar Cliente',
-        () => {
+        async () => {
             clients = clients.filter(c => c.id !== id);
-            saveClients();
+            await window.StorageAPI.deleteClient(id);
             filteredClients = [...clients];
             
             // Ajustar página actual si es necesario
@@ -425,7 +409,7 @@ function deleteClient(id) {
 }
 
 // Vaciar clientes
-function clearClients() {
+async function clearClients() {
     if (clients.length === 0) {
         Notification.info('La lista de clientes ya está vacía', 'Sin Clientes');
         return;
@@ -437,18 +421,21 @@ function clearClients() {
         `Esta acción eliminará ${clients.length} cliente(s) y NO se puede deshacer.\n\n` +
         `Se recomienda exportar la lista antes de continuar.`,
         'Vaciar Lista de Clientes',
-        () => {
+        async () => {
             ConfirmDialog.show(
                 `Esta es su última oportunidad.\n\n` +
                 `¿Realmente desea VACIAR la lista de clientes?`,
                 'Confirmación Final',
-                () => {
+                async () => {
                     const deletedCount = clients.length;
+                    // Eliminar todos de Supabase
+                    for (const client of clients) {
+                        await window.StorageAPI.deleteClient(client.id);
+                    }
                     clients = [];
                     filteredClients = [];
                     currentPage = 1;
                     
-                    saveClients();
                     renderClients();
                     
                     Notification.success(
@@ -498,12 +485,12 @@ function importClients() {
     if (input) input.click();
 }
 
-function handleImportFile(event) {
+async function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -548,7 +535,10 @@ function handleImportFile(event) {
             
             if (importedClients.length > 0) {
                 clients = [...clients, ...importedClients];
-                saveClients();
+                // Guardar cada cliente en Supabase
+                for (const client of importedClients) {
+                    await window.StorageAPI.saveClient(client);
+                }
                 filteredClients = [...clients];
                 renderClients();
                 

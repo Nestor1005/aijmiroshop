@@ -92,29 +92,6 @@ function getDefaultProducts() {
     ];
 }
 
-// Guardar productos en localStorage
-function saveProducts() {
-    try {
-        const productsJSON = JSON.stringify(products);
-        
-        // Verificar si hay espacio suficiente
-        const storageLimit = 5 * 1024 * 1024; // 5MB aproximado para localStorage
-        if (productsJSON.length > storageLimit) {
-            Notification.warning('El almacenamiento está llegando a su límite. Considere eliminar productos antiguos o imágenes.', 'Advertencia');
-        }
-        
-        localStorage.setItem('products', productsJSON);
-    } catch (error) {
-        console.error('Error al guardar productos:', error);
-        
-        if (error.name === 'QuotaExceededError') {
-            Notification.error('Almacenamiento lleno. Las imágenes se comprimen automáticamente. Intente eliminar productos antiguos.', 'Almacenamiento Lleno');
-        } else {
-            Notification.error('Error al guardar los datos.', 'Error');
-        }
-    }
-}
-
 // Renderizar productos en la tabla
 function renderProducts() {
     const tbody = document.getElementById('productsTableBody');
@@ -405,7 +382,8 @@ function compressImage(base64Image, callback) {
 }
 
 // Guardar producto
-function saveProduct(event) {
+// Guardar producto (Agregar o Editar)
+async function saveProduct(event) {
     event.preventDefault();
     
     const nameInput = document.getElementById('productName');
@@ -474,16 +452,17 @@ function saveProduct(event) {
                 ...products[index], 
                 ...productData 
             };
+            await window.StorageAPI.saveProduct(products[index]);
             Notification.success(`Producto "${productData.name}" actualizado correctamente`, 'Éxito');
         }
     } else {
         // Agregar nuevo producto
         productData.id = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
         products.push(productData);
+        await window.StorageAPI.saveProduct(productData);
         Notification.success(`Producto "${productData.name}" agregado correctamente`, 'Éxito');
     }
     
-    saveProducts();
     filteredProducts = [...products];
     renderProducts();
     closeProductModal();
@@ -533,7 +512,7 @@ function editProduct(id) {
 }
 
 // Eliminar producto
-function deleteProduct(id) {
+async function deleteProduct(id) {
     const product = products.find(p => p.id === id);
     if (!product) {
         Notification.error('Producto no encontrado', 'Error');
@@ -543,9 +522,9 @@ function deleteProduct(id) {
     ConfirmDialog.show(
         `¿Está seguro que desea eliminar el producto "${product.name}"?`,
         'Eliminar Producto',
-        () => {
+        async () => {
             products = products.filter(p => p.id !== id);
-            saveProducts();
+            await window.StorageAPI.deleteProduct(id);
             filteredProducts = [...products];
             
             // Ajustar página actual si es necesario
@@ -592,17 +571,17 @@ function downloadTemplate() {
 }
 
 // Importar productos
-function importProducts() {
+async function importProducts() {
     const input = document.getElementById('importFileInput');
     if (input) input.click();
 }
 
-function handleImportFile(event) {
+async function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
     
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
@@ -649,7 +628,10 @@ function handleImportFile(event) {
             
             if (importedProducts.length > 0) {
                 products = [...products, ...importedProducts];
-                saveProducts();
+                // Guardar cada producto en Supabase
+                for (const product of importedProducts) {
+                    await window.StorageAPI.saveProduct(product);
+                }
                 filteredProducts = [...products];
                 renderProducts();
                 
@@ -736,19 +718,22 @@ function clearInventory() {
         `Esta acción eliminará ${products.length} producto(s) y NO se puede deshacer.\n\n` +
         `Se recomienda exportar el inventario antes de continuar.`,
         'Vaciar Inventario',
-        () => {
+        async () => {
             // Segunda confirmación para mayor seguridad
             ConfirmDialog.show(
                 `Esta es su última oportunidad.\n\n` +
                 `¿Realmente desea VACIAR el inventario completamente?`,
                 'Confirmación Final',
-                () => {
+                async () => {
                     const deletedCount = products.length;
+                    // Eliminar todos los productos de Supabase
+                    for (const product of products) {
+                        await window.StorageAPI.deleteProduct(product.id);
+                    }
                     products = [];
                     filteredProducts = [];
                     currentPage = 1;
                     
-                    saveProducts();
                     renderProducts();
                     
                     Notification.success(
