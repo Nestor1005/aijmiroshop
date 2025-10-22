@@ -32,6 +32,7 @@ const StorageAPI = {
     },
 
     async saveUser(user) {
+        // SIEMPRE intentar guardar en Supabase primero
         if (this.isSupabaseReady()) {
             try {
                 const client = window.supabaseConfig.getClient();
@@ -52,6 +53,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveUserLocal(user);
                     return data[0];
                 } else {
                     // Crear nuevo usuario
@@ -67,6 +70,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveUserLocal(data[0]);
                     return data[0];
                 }
             } catch (error) {
@@ -75,6 +80,7 @@ const StorageAPI = {
                 return this.saveUserLocal(user);
             }
         }
+        // Si Supabase no está disponible, usar localStorage
         return this.saveUserLocal(user);
     },
 
@@ -140,6 +146,7 @@ const StorageAPI = {
     },
 
     async saveProduct(product) {
+        // SIEMPRE intentar guardar en Supabase primero
         if (this.isSupabaseReady()) {
             try {
                 const client = window.supabaseConfig.getClient();
@@ -160,6 +167,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveProductLocal(product);
                     return data[0];
                 } else {
                     const { data, error } = await client
@@ -175,6 +184,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveProductLocal(data[0]);
                     return data[0];
                 }
             } catch (error) {
@@ -247,6 +258,7 @@ const StorageAPI = {
     },
 
     async saveClient(client) {
+        // SIEMPRE intentar guardar en Supabase primero
         if (this.isSupabaseReady()) {
             try {
                 const supabase = window.supabaseConfig.getClient();
@@ -266,6 +278,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveClientLocal(client);
                     return data[0];
                 } else {
                     const { data, error } = await supabase
@@ -280,6 +294,8 @@ const StorageAPI = {
                         .select();
                     
                     if (error) throw error;
+                    // También guardar en localStorage como backup
+                    this.saveClientLocal(data[0]);
                     return data[0];
                 }
             } catch (error) {
