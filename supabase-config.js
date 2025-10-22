@@ -20,6 +20,15 @@ function initSupabase() {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             storageMode = 'supabase';
             console.log('✅ Supabase inicializado correctamente');
+                // Si StorageAPI está cargada, iniciar realtime
+                if (window.StorageAPI && typeof window.StorageAPI.startRealtime === 'function') {
+                    try {
+                        window.StorageAPI.startRealtime();
+                        console.log('🔁 StorageAPI realtime iniciado');
+                    } catch (err) {
+                        console.warn('No se pudo iniciar StorageAPI realtime:', err);
+                    }
+                }
             return true;
         } catch (error) {
             console.warn('⚠️ Error al inicializar Supabase, usando localStorage:', error);

@@ -350,6 +350,51 @@ const StorageAPI = {
         localStorage.setItem(key, JSON.stringify(value));
         return value;
     }
+
+    // ======================
+    // Realtime (Supabase)
+    // ======================
+    _realtimeSubs: [],
+
+    startRealtime() {
+        if (!this.isSupabaseReady()) return;
+        try {
+            const client = window.supabaseConfig.getClient();
+
+            // Suscribirse a tablas que necesitamos sincronizar
+            const tables = ['users', 'products', 'clients', 'sales', 'sale_items', 'settings'];
+
+            tables.forEach(table => {
+                const subscription = client
+                    .channel('public:' + table)
+                    .on('postgres_changes', { event: '*', schema: 'public', table: table }, payload => {
+                        const detail = { table, event: payload.eventType, record: payload.new || payload.old };
+                        // Emitir evento global
+                        window.dispatchEvent(new CustomEvent('realtime-change', { detail }));
+                    })
+                    .subscribe(status => {
+                        // status puede ser SUBSCRIBED, ERROR, etc.
+                        console.log('Realtime', table, status);
+                    });
+
+                this._realtimeSubs.push(subscription);
+            });
+        } catch (err) {
+            console.error('Error al iniciar realtime:', err);
+        }
+    },
+
+    stopRealtime() {
+        try {
+            const client = window.supabaseConfig.getClient();
+            this._realtimeSubs.forEach(sub => {
+                try { client.removeChannel(sub); } catch (e) { /* ignore */ }
+            });
+            this._realtimeSubs = [];
+        } catch (err) {
+            console.warn('Error al detener realtime', err);
+        }
+    }
 };
 
 // Hacer disponible globalmente

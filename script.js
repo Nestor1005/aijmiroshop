@@ -574,3 +574,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// ==================== Realtime listener (actualización en tiempo real) ====================
+window.addEventListener('realtime-change', function(e) {
+    try {
+        const detail = e.detail || {};
+        console.log('Realtime change received:', detail);
+
+        // Si la tabla afecta a la UI actual, actualizar según contexto
+        const currentPage = window.location.pathname.split('/').pop();
+
+        // Casos simples: si estamos en páginas que muestran users/products/clients, recargar
+        const reloadPages = ['dashboard.html', 'inventario.html', 'clientes.html', 'historial.html', 'reportes.html', 'configuraciones.html'];
+        if (reloadPages.includes(currentPage) || currentPage === '') {
+            // Opcional: podríamos re-renderizar solo la parte afectada, pero ahora recargaremos
+            console.log('Refrescando página por cambio en:', detail.table);
+            setTimeout(() => location.reload(), 500);
+        }
+    } catch (err) {
+        console.error('Error manejando realtime-change:', err);
+    }
+});
