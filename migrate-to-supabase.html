@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrar a Supabase - AIJMIROSHOP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #2c3e50;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .success { color: #27ae60; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .info { color: #3498db; }
+        .warning { color: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Migración a Supabase</h1>
+        
+        <div class="section">
+            <h2>📊 Estado Actual</h2>
+            <div id="status">Verificando...</div>
+        </div>
+
+        <div class="section">
+            <h2>🔄 Migrar Datos</h2>
+            <p>Esto copiará todos tus datos de localStorage a Supabase:</p>
+            <ul>
+                <li>Usuarios</li>
+                <li>Productos</li>
+                <li>Clientes</li>
+                <li>Ventas</li>
+                <li>Configuraciones</li>
+            </ul>
+            <button id="migrateBtn" onclick="migrateData()">Iniciar Migración</button>
+        </div>
+
+        <div class="section">
+            <h2>📝 Log de Migración</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="storage-api.js"></script>
+
+    <script>
+        let logContainer = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(span);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        async function checkStatus() {
+            const statusDiv = document.getElementById('status');
+            
+            // Verificar localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const sales = JSON.parse(localStorage.getItem('sales') || '[]');
+            
+            statusDiv.innerHTML = `
+                <strong>Datos en localStorage:</strong><br>
+                👥 Usuarios: ${users.length}<br>
+                📦 Productos: ${products.length}<br>
+                👤 Clientes: ${clients.length}<br>
+                💰 Ventas: ${sales.length}<br><br>
+                <strong>Supabase:</strong> ${window.StorageAPI.isSupabaseReady() ? '✅ Conectado' : '❌ No conectado'}
+            `;
+        }
+
+        async function migrateData() {
+            const btn = document.getElementById('migrateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Migrando...';
+            logContainer.innerHTML = '';
+            
+            log('🚀 Iniciando migración...', 'info');
+            
+            if (!window.StorageAPI.isSupabaseReady()) {
+                log('❌ Supabase no está conectado. Verifica las credenciales.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Reintentar Migración';
+                return;
+            }
+
+            const client = window.supabaseConfig.getClient();
+            let totalMigrated = 0;
+            let errors = 0;
+
+            try {
+                // Migrar USUARIOS
+                log('👥 Migrando usuarios...', 'info');
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                for (const user of users) {
+                    try {
+                        const { error } = await client
+                            .from('users')
+                            .upsert({
+                                id: user.id,
+                                username: user.username,
+                                password: user.password,
+                                role: user.role,
+                                name: user.name,
+                                active: user.active !== false
+                            }, { onConflict: 'id' });
+                        
+                        if (error) throw error;
+                        log(`  ✓ Usuario migrado: ${user.username}`, 'success');
+                        totalMigrated++;
+                    } catch (err) {
+                        log(`  ✗ Error en usuario ${user.username}: ${err.message}`, 'error');
+                        errors++;
+                    }
+                }
+
+                // Migrar PRODUCTOS
+                log('📦 Migrando productos...', 'info');
+                const products = JSON.parse(localStorage.getItem('products') || '[]');
+                for (const product of products) {
+                    try {
+                        const { error } = await client
+                            .from('products')
+                            .upsert({
+                                id: product.id,
+                                name: product.name,
+                                color: product.color,
+                                stock: product.stock,
+                                cost: product.cost,
+                                price: product.price,
+                                image: product.image || ''
+                            }, { onConflict: 'id' });
+                        
+                        if (error) throw error;
+                        log(`  ✓ Producto migrado: ${product.name}`, 'success');
+                        totalMigrated++;
+                    } catch (err) {
+                        log(`  ✗ Error en producto ${product.name}: ${err.message}`, 'error');
+                        errors++;
+                    }
+                }
+
+                // Migrar CLIENTES
+                log('👤 Migrando clientes...', 'info');
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                for (const client_data of clients) {
+                    try {
+                        const { error } = await client
+                            .from('clients')
+                            .upsert({
+                                id: client_data.id,
+                                name: client_data.name,
+                                ci: client_data.ci,
+                                complement: client_data.complement || null,
+                                phone: client_data.phone || null,
+                                address: client_data.address || null
+                            }, { onConflict: 'id' });
+                        
+                        if (error) throw error;
+                        log(`  ✓ Cliente migrado: ${client_data.name}`, 'success');
+                        totalMigrated++;
+                    } catch (err) {
+                        log(`  ✗ Error en cliente ${client_data.name}: ${err.message}`, 'error');
+                        errors++;
+                    }
+                }
+
+                // Migrar CONFIGURACIONES
+                log('⚙️ Migrando configuraciones...', 'info');
+                const ticketSettings = localStorage.getItem('ticketSettings');
+                if (ticketSettings) {
+                    try {
+                        const { error } = await client
+                            .from('settings')
+                            .upsert({
+                                key: 'ticketSettings',
+                                value: JSON.parse(ticketSettings)
+                            }, { onConflict: 'key' });
+                        
+                        if (error) throw error;
+                        log('  ✓ Configuraciones migradas', 'success');
+                        totalMigrated++;
+                    } catch (err) {
+                        log(`  ✗ Error en configuraciones: ${err.message}`, 'error');
+                        errors++;
+                    }
+                }
+
+                // Resumen
+                log('', 'info');
+                log('═══════════════════════════════', 'info');
+                log(`✅ Migración completada`, 'success');
+                log(`📊 Total migrado: ${totalMigrated} registros`, 'success');
+                if (errors > 0) {
+                    log(`⚠️ Errores: ${errors}`, 'warning');
+                }
+                log('═══════════════════════════════', 'info');
+                log('', 'info');
+                log('🎉 Ahora tus datos están en Supabase', 'success');
+                log('🔄 Los cambios se sincronizarán en tiempo real entre dispositivos', 'info');
+
+                btn.textContent = '✅ Migración Completada';
+                
+                setTimeout(() => {
+                    if (confirm('¿Deseas ir al dashboard ahora?')) {
+                        window.location.href = 'index.html';
+                    }
+                }, 2000);
+
+            } catch (err) {
+                log(`❌ Error general: ${err.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Reintentar Migración';
+            }
+        }
+
+        // Verificar estado al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkStatus, 1000);
+        });
+    </script>
+</body>
+</html>
