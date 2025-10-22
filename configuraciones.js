@@ -8,12 +8,10 @@ function goToDashboard() {
 }
 
 // Cargar datos al iniciar
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     updateUserInfo();
-    loadOperators();
-    loadAdminInfo();
-    loadTicketSettings();
-    renderOperatorsTable();
+    await loadAdminInfo();
+    await loadTicketSettings();
 });
 
 // Actualizar información del usuario en el header
@@ -46,20 +44,9 @@ function updateUserInfo() {
     }
 }
 
-// Cargar operarios desde localStorage
-function loadOperators() {
-    const savedOperators = localStorage.getItem('operators');
-    operators = savedOperators ? JSON.parse(savedOperators) : [];
-}
-
-// Guardar operarios en localStorage
-function saveOperators() {
-    localStorage.setItem('operators', JSON.stringify(operators));
-}
-
 // Cargar información del admin
-function loadAdminInfo() {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
+async function loadAdminInfo() {
+    const users = await window.StorageAPI.getUsers();
     const admin = users.find(u => u.role === 'admin');
     
     if (admin) {
