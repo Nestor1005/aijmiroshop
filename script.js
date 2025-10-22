@@ -352,7 +352,7 @@ function togglePassword() {
     }
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
     event.preventDefault();
     
     const username = document.getElementById('username').value;
@@ -362,32 +362,38 @@ function handleLogin(event) {
     
     console.log('Intentando login con rol:', selectedRole);
     
-    // Obtener usuarios de localStorage
-    const savedUsers = JSON.parse(localStorage.getItem('users')) || [];
-    
-    // Buscar usuario que coincida con credenciales y rol
-    const validUser = savedUsers.find(user => 
-        user.username === username && 
-        user.password === password && 
-        user.role === selectedRole &&
-        (user.role === 'admin' || user.active !== false) // Operadores inactivos no pueden entrar
-    );
-    
-    if (validUser) {
-        // Guardar sesión
-        sessionStorage.setItem('currentUser', JSON.stringify(validUser));
-        sessionStorage.setItem('isLoggedIn', 'true');
+    try {
+        // Obtener usuarios usando Storage API (Supabase o localStorage)
+        const savedUsers = await window.StorageAPI.getUsers();
         
-        // Redirigir al dashboard
-        window.location.href = 'dashboard.html';
-    } else {
-        // Mostrar error en el formulario
-        errorMessage.textContent = 'Usuario o contraseña incorrectos';
+        // Buscar usuario que coincida con credenciales y rol
+        const validUser = savedUsers.find(user => 
+            user.username === username && 
+            user.password === password && 
+            user.role === selectedRole &&
+            (user.role === 'admin' || user.active !== false) // Operadores inactivos no pueden entrar
+        );
+        
+        if (validUser) {
+            // Guardar sesión
+            sessionStorage.setItem('currentUser', JSON.stringify(validUser));
+            sessionStorage.setItem('isLoggedIn', 'true');
+            
+            // Redirigir al dashboard
+            window.location.href = 'dashboard.html';
+        } else {
+            // Mostrar error en el formulario
+            errorMessage.textContent = 'Usuario o contraseña incorrectos';
+            errorMessage.classList.add('show');
+            
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 3000);
+        }
+    } catch (error) {
+        console.error('Error durante el login:', error);
+        errorMessage.textContent = 'Error al iniciar sesión. Intente nuevamente.';
         errorMessage.classList.add('show');
-        
-        setTimeout(() => {
-            errorMessage.classList.remove('show');
-        }, 3000);
     }
 }
 
