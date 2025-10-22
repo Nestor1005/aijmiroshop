@@ -50,7 +50,18 @@ async function initInventory() {
 // Cargar productos desde Supabase/localStorage
 async function loadProducts() {
     try {
-        products = await window.StorageAPI.getProducts();
+        const result = await window.StorageAPI.getProducts();
+        console.log('Productos recibidos:', result);
+        
+        // Asegurarse de que products sea siempre un array
+        products = Array.isArray(result) ? result : [];
+        
+        // Si no hay productos, usar los por defecto
+        if (products.length === 0) {
+            console.log('No hay productos en DB, usando productos por defecto');
+            products = getDefaultProducts();
+        }
+        
         filteredProducts = [...products];
     } catch (error) {
         console.error('Error al cargar productos:', error);

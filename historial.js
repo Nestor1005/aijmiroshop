@@ -85,9 +85,17 @@ function setDefaultDates() {
 // Cargar ventas desde Supabase
 async function loadSales() {
     try {
-        sales = await window.StorageAPI.getSales();
+        const result = await window.StorageAPI.getSales();
+        console.log('Ventas recibidas:', result);
+        
+        // Asegurarse de que sales sea siempre un array
+        sales = Array.isArray(result) ? result : [];
+        
         // Ordenar por fecha descendente (más recientes primero)
-        sales.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+        if (sales.length > 0) {
+            sales.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+        }
+        
         filteredSales = [...sales];
     } catch (error) {
         console.error('Error al cargar ventas:', error);

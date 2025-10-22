@@ -42,9 +42,16 @@ function initSales() {
 // Cargar datos desde Supabase
 async function loadData() {
     try {
-        products = await window.StorageAPI.getProducts();
-        clients = await window.StorageAPI.getClients();
-        sales = await window.StorageAPI.getSales();
+        const productsResult = await window.StorageAPI.getProducts();
+        const clientsResult = await window.StorageAPI.getClients();
+        const salesResult = await window.StorageAPI.getSales();
+        
+        console.log('Datos cargados - Productos:', productsResult, 'Clientes:', clientsResult, 'Ventas:', salesResult);
+        
+        // Asegurarse de que sean siempre arrays
+        products = Array.isArray(productsResult) ? productsResult : [];
+        clients = Array.isArray(clientsResult) ? clientsResult : [];
+        sales = Array.isArray(salesResult) ? salesResult : [];
     } catch (error) {
         console.error('Error al cargar datos:', error);
         products = [];

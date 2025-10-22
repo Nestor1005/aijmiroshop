@@ -50,10 +50,20 @@ function initClients() {
 // Cargar clientes desde Supabase
 async function loadClients() {
     try {
-        clients = await window.StorageAPI.getClients();
+        const result = await window.StorageAPI.getClients();
+        console.log('Clientes recibidos:', result);
+        
+        // Asegurarse de que clients sea siempre un array
+        clients = Array.isArray(result) ? result : [];
+        
+        // Si no hay clientes, usar los por defecto
+        if (clients.length === 0) {
+            console.log('No hay clientes en DB, usando clientes por defecto');
+            clients = getDefaultClients();
+        }
     } catch (error) {
         console.error('Error al cargar clientes:', error);
-        clients = [];
+        clients = getDefaultClients();
     }
     filteredClients = [...clients];
 }
