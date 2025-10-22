@@ -552,10 +552,10 @@ async function confirmAndCaptureSale() {
 // Capturar ticket como imagen y descargar automáticamente
 async function captureTicket(sale) {
     // Obtener configuración del ticket
-    const ticketSettings = await window.StorageAPI.getSettings();
-        companyName: 'AIJMIROSHOP',
-        subtitle: 'Sistema de Gestión de Inventario',
-        footerMessage: '¡Gracias por su compra!'
+    const ticketSettings = await window.StorageAPI.getSettings() || {
+        company_name: 'AIJMIROSHOP',
+        ticket_subtitle: 'Sistema de Gestión de Inventario',
+        ticket_footer: '¡Gracias por su compra!'
     };
     
     // Crear un contenedor temporal para el ticket

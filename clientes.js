@@ -87,16 +87,16 @@ function getDefaultClients() {
         }
     ];
 }
-
-// Guardar clientes en localStorage
-function saveClients() {
-    try {
-        localStorage.setItem('clients', JSON.stringify(clients));
-    } catch (error) {
-    ];
-}
-
 // Renderizar clientes en la tabla
+function renderClients() {
+    const tbody = document.getElementById('clientsTableBody');
+    if (!tbody) return;
+    
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginatedClients = filteredClients.slice(start, end);
+    
+
     if (paginatedClients.length === 0) {
         tbody.innerHTML = `
             <tr>
