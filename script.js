@@ -576,21 +576,51 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== Realtime listener (actualización en tiempo real) ====================
-window.addEventListener('realtime-change', function(e) {
+window.addEventListener('realtime-change', async function(e) {
     try {
         const detail = e.detail || {};
-        console.log('Realtime change received:', detail);
+        console.log('🔄 Cambio en tiempo real detectado:', detail);
 
-        // Si la tabla afecta a la UI actual, actualizar según contexto
         const currentPage = window.location.pathname.split('/').pop();
 
-        // Casos simples: si estamos en páginas que muestran users/products/clients, recargar
-        const reloadPages = ['dashboard.html', 'inventario.html', 'clientes.html', 'historial.html', 'reportes.html', 'configuraciones.html'];
-        if (reloadPages.includes(currentPage) || currentPage === '') {
-            // Opcional: podríamos re-renderizar solo la parte afectada, pero ahora recargaremos
-            console.log('Refrescando página por cambio en:', detail.table);
-            setTimeout(() => location.reload(), 500);
+        // Recargar datos según la tabla afectada
+        if (detail.table === 'products' && (currentPage === 'inventario.html' || currentPage === 'ventas.html')) {
+            console.log('📦 Recargando productos...');
+            if (typeof loadProducts === 'function') {
+                await loadProducts();
+                if (typeof renderProducts === 'function') renderProducts();
+            }
         }
+        
+        if (detail.table === 'clients' && (currentPage === 'clientes.html' || currentPage === 'ventas.html')) {
+            console.log('👤 Recargando clientes...');
+            if (typeof loadClients === 'function') {
+                await loadClients();
+                if (typeof renderClientsTable === 'function') renderClientsTable();
+            }
+        }
+        
+        if (detail.table === 'users' && currentPage === 'configuraciones.html') {
+            console.log('👥 Recargando usuarios...');
+            if (typeof loadOperators === 'function') {
+                await loadOperators();
+                if (typeof renderOperatorsTable === 'function') renderOperatorsTable();
+            }
+        }
+
+        if (detail.table === 'sales' && currentPage === 'historial.html') {
+            console.log('💰 Recargando ventas...');
+            if (typeof loadSales === 'function') {
+                await loadSales();
+                if (typeof renderSalesTable === 'function') renderSalesTable();
+            }
+        }
+
+        // Mostrar notificación de cambio
+        if (Notification && typeof Notification.info === 'function') {
+            Notification.info(`Datos actualizados: ${detail.table}`, 'Cambio detectado');
+        }
+        
     } catch (err) {
         console.error('Error manejando realtime-change:', err);
     }

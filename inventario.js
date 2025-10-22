@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function initInventory() {
+async function initInventory() {
     const user = checkAuth();
     if (!user) return;
     
@@ -38,7 +38,7 @@ function initInventory() {
     if (userIcon) userIcon.className = user.role === 'admin' ? 'fas fa-user-shield' : 'fas fa-user';
     
     updateDateTime();
-    loadProducts();
+    await loadProducts(); // Ahora es async
     renderProducts();
     
     // Notificación de bienvenida
@@ -47,23 +47,16 @@ function initInventory() {
     }, 500);
 }
 
-// Cargar productos desde localStorage
-function loadProducts() {
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-        try {
-            products = JSON.parse(savedProducts);
-        } catch (error) {
-            console.error('Error al cargar productos:', error);
-            products = getDefaultProducts();
-            saveProducts();
-        }
-    } else {
-        // Datos de ejemplo
+// Cargar productos desde Supabase/localStorage
+async function loadProducts() {
+    try {
+        products = await window.StorageAPI.getProducts();
+        filteredProducts = [...products];
+    } catch (error) {
+        console.error('Error al cargar productos:', error);
         products = getDefaultProducts();
-        saveProducts();
+        filteredProducts = [...products];
     }
-    filteredProducts = [...products];
 }
 
 // Productos por defecto
