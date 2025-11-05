@@ -79,7 +79,7 @@ export default function Dashboard({ onLogout, getSession }) {
           <Routes>
             <Route index element={<Inventario />} />
             <Route path="clientes" element={<Clientes />} />
-            <Route path="ticket" element={<Ticket />} />
+            <Route path="ticket" element={<Ticket session={session} />} />
             <Route path="historial" element={<Historial />} />
             <Route path="usuarios" element={<Usuarios session={session} />} />
             <Route path="estadisticas" element={<Estadisticas />} />

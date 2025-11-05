@@ -9,7 +9,13 @@ const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
 const STORAGE_HISTORY = 'aij-history'
 
-export default function Ticket() {
+const COMPANY = {
+  name: 'AIJMIROSHOP',
+  email: 'ntarquilopez@gmail.com',
+  address: '6 de octubre y soto mayor',
+}
+
+export default function Ticket({ session }) {
   const { notify } = useUI()
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
   const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
@@ -132,33 +138,67 @@ export default function Ticket() {
         </div>
       </div>
 
-      {/* Vista del Ticket para captura */}
-      <div ref={ticketRef} className="mt-6 border rounded-lg p-4 text-sm">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold">AIJMIROSHOP — Ticket</h4>
-          <span>{new Date().toLocaleString()}</span>
+      {/* Vista del Ticket tipo recibo para captura */}
+      <div className="mt-6 flex justify-center">
+        <div ref={ticketRef} className="w-full max-w-[720px] bg-white text-gray-900 font-mono text-[14px] leading-6 p-6 border rounded-lg shadow-sm">
+          <div className="text-center">
+            <h1 className="text-2xl font-extrabold tracking-widest">{COMPANY.name}</h1>
+            <div className="text-sm mt-1">{COMPANY.email}</div>
+            <div className="text-sm">{COMPANY.address}</div>
+            <h2 className="mt-4 text-xl font-bold">Orden de Venta</h2>
+            <div className="mt-1">{new Date().toLocaleString('es-BO')}</div>
+          </div>
+
+          <div className="my-4 border-t border-dashed"></div>
+
+          <div className="space-y-1">
+            <div><span className="font-bold">Cliente:</span> {client?.nombre || quickClient || '—'}</div>
+            {client?.cedula && <div><span className="font-bold">CI:</span> {client.cedula}</div>}
+            <div><span className="font-bold">Atendido por:</span> {session?.username || 'Usuario'}</div>
+          </div>
+
+          <div className="my-4 border-t border-dashed"></div>
+
+          <div className="space-y-4">
+            {items.map((it, idx) => {
+              const lineTotal = (Number(it.qty) || 0) * (Number(it.price) || 0)
+              return (
+                <div key={idx}>
+                  <div className="flex justify-between">
+                    <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}</div>
+                    <div className="font-bold">Bs. {formatMoney(lineTotal)}</div>
+                  </div>
+                  <div className="text-sm">P/U: Bs. {formatMoney(it.price)},00 x {Number(it.qty) || 0}</div>
+                </div>
+              )
+            })}
+            {items.length === 0 && (
+              <div className="text-sm text-gray-500">Sin productos</div>
+            )}
+          </div>
+
+          <div className="my-4 border-t border-dashed"></div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between"><span className="font-bold">Subtotal:</span><span>Bs. {formatMoney(subtotal)}</span></div>
+            <div className="flex justify-between"><span className="font-bold">Descuento:</span><span>Bs. {formatMoney(Number(discount || 0))}</span></div>
+          </div>
+
+          <div className="mt-3 p-3 rounded border bg-gray-100">
+            <div className="font-bold">Lugar de Envío:</div>
+            <div>{shipping || client?.direccion || '—'}</div>
+          </div>
+
+          <div className="mt-4 flex justify-between text-xl font-extrabold">
+            <span>TOTAL:</span>
+            <span>Bs. {formatMoney(total)}</span>
+          </div>
+
+          <div className="mt-2">Método de Pago: {payment}</div>
+
+          <div className="my-4 border-t border-dashed"></div>
+          <div className="text-center">¡Gracias por su compra!</div>
         </div>
-        <div className="mt-2 text-gray-600">Cliente: {client?.nombre || quickClient || '—'}</div>
-        <div className="mt-1 text-gray-600">Envío: {shipping || client?.direccion || '—'}</div>
-        <table className="mt-3 w-full">
-          <thead className="text-left text-gray-600">
-            <tr><th>Producto</th><th>Cant.</th><th className="text-right">Precio</th><th className="text-right">Subt.</th></tr>
-          </thead>
-          <tbody>
-            {items.map((it, idx) => (
-              <tr key={idx} className="border-t">
-                <td className="py-1">{it.name}</td>
-                <td className="py-1">
-                  <input className="w-16 rounded border-gray-300" type="number" min="1" value={it.qty} onChange={(e) => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: Number(e.target.value) } : p))} />
-                </td>
-                <td className="py-1 text-right">{formatMoney(it.price)}</td>
-                <td className="py-1 text-right">{formatMoney((Number(it.qty) || 0) * (Number(it.price) || 0))}</td>
-              </tr>
-            ))}
-            {items.length === 0 && <tr><td className="py-2 text-gray-500" colSpan="4">Sin productos</td></tr>}
-          </tbody>
-        </table>
-        <div className="flex justify-end mt-2 font-semibold">Total: {formatMoney(total)}</div>
       </div>
     </section>
   )
