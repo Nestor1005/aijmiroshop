@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 
@@ -97,6 +97,16 @@ export default function Estadisticas() {
   const chartWidthMobile = seriesDias.length * (barWidth + gapPx) + paddingPx * 2
   const labelStep = Math.max(1, Math.ceil(seriesDias.length / 12)) // máx ~12 etiquetas visibles en móvil
 
+  // Auto-scroll al final (hoy) cuando cambia la serie o el rango
+  const scrollRef = useRef(null)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) {
+      // scroll al extremo derecho para ver la fecha más reciente
+      el.scrollLeft = el.scrollWidth
+    }
+  }, [seriesDias, range])
+
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -179,7 +189,7 @@ export default function Estadisticas() {
       <div className="mb-6">
         <div className="text-sm font-medium mb-2">Ventas por día</div>
         <div className="border rounded-lg bg-white">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={scrollRef}>
             <div
               className="h-40 flex items-end gap-1 p-3"
               style={{ width: `${Math.max(chartWidthMobile, 320)}px` }}
