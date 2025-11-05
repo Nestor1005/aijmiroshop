@@ -47,8 +47,8 @@ export default function Clientes() {
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Clientes</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <button className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar cliente</button>
-          <button className="px-3 py-2 bg-red-100 text-red-700 rounded-lg" onClick={onWipe}>🗑️ Vaciar clientes</button>
+          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar cliente</button>
+          <button type="button" className="px-3 py-2 bg-red-100 text-red-700 rounded-lg" onClick={onWipe}>🗑️ Vaciar clientes</button>
         </div>
       </header>
 

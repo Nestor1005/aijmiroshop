@@ -83,14 +83,14 @@ export default function Inventario() {
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Inventario</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <button className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar producto</button>
+          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar producto</button>
           <label className="px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
             📥 Importar (.xlsx)
             <input type="file" className="hidden" accept=".xlsx,.xls" onChange={(e) => e.target.files[0] && onImport(e.target.files[0])} />
           </label>
-          <button className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onExport}>📤 Exportar (.xlsx)</button>
-          <button className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onDownloadTemplate}>📄 Descargar formato</button>
-          <button className="px-3 py-2 bg-red-100 text-red-700 rounded-lg" onClick={onWipe}>🗑️ Vaciar inventario</button>
+          <button type="button" className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onExport}>📤 Exportar (.xlsx)</button>
+          <button type="button" className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onDownloadTemplate}>📄 Descargar formato</button>
+          <button type="button" className="px-3 py-2 bg-red-100 text-red-700 rounded-lg" onClick={onWipe}>🗑️ Vaciar inventario</button>
         </div>
       </header>
 
