@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
 
@@ -12,6 +12,7 @@ export default function Clientes() {
   const [page, setPage] = useState(1)
 
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '', direccion: '' })
+  const nameRef = useRef(null)
 
   const filtered = useMemo(() => {
     let data = items
@@ -31,11 +32,13 @@ export default function Clientes() {
   }
 
   const addItem = () => {
-    if (!form.nombre) {
+    const nombre = (form.nombre || '').trim()
+    if (!nombre) {
       notify({ type: 'error', message: 'Ingresa al menos el nombre del cliente.' })
+      nameRef.current?.focus()
       return
     }
-    const nuevo = { id: uid('cli'), ...form }
+    const nuevo = { id: uid('cli'), ...form, nombre }
     update([nuevo, ...items])
     setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
     notify({ type: 'success', message: 'Cliente agregado.' })
@@ -66,7 +69,9 @@ export default function Clientes() {
           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           placeholder="Nombre"
           value={form.nombre}
+          ref={nameRef}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') addItem() }}
         />
         <input
           type="text"

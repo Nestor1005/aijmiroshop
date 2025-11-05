@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { exportToXLSX, importFromXLSX } from '../../utils/exportExcel'
 import { formatMoney, parseMoney } from '../../utils/formatNumbers'
 import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
@@ -23,6 +23,7 @@ export default function Inventario() {
     precio: '',
     categoria: '',
   })
+  const nameRef = useRef(null)
 
   const filtered = useMemo(() => {
     let data = items
@@ -46,13 +47,16 @@ export default function Inventario() {
   }
 
   const addItem = () => {
-    if (!form.nombre) {
+    const nombre = (form.nombre || '').trim()
+    if (!nombre) {
       notify({ type: 'error', message: 'Ingresa al menos el nombre del producto.' })
+      // Enfocar el campo para facilitar la corrección
+      nameRef.current?.focus()
       return
     }
     const nuevo = {
       id: uid('prod'),
-      nombre: form.nombre,
+      nombre,
       color: form.color,
       stock: Number(form.stock || 0),
       costo: parseMoney(form.costo),
@@ -131,7 +135,9 @@ export default function Inventario() {
           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           placeholder="Nombre del producto"
           value={form.nombre}
+          ref={nameRef}
           onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') addItem() }}
         />
         <input
           type="text"
@@ -146,6 +152,7 @@ export default function Inventario() {
           placeholder="Stock"
           value={form.stock}
           onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') addItem() }}
         />
         <input
           type="text"
@@ -153,6 +160,7 @@ export default function Inventario() {
           placeholder="Costo (Bs.)"
           value={form.costo}
           onChange={(e) => setForm({ ...form, costo: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') addItem() }}
         />
         <input
           type="text"
@@ -160,6 +168,7 @@ export default function Inventario() {
           placeholder="Precio (Bs.)"
           value={form.precio}
           onChange={(e) => setForm({ ...form, precio: e.target.value })}
+          onKeyDown={(e) => { if (e.key === 'Enter') addItem() }}
         />
         <input
           type="text"
