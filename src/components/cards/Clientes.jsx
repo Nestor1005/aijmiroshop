@@ -12,6 +12,7 @@ export default function Clientes() {
   const [page, setPage] = useState(1)
 
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '', direccion: '' })
+  const [editingId, setEditingId] = useState(null)
   const nameRef = useRef(null)
 
   const filtered = useMemo(() => {
@@ -38,10 +39,22 @@ export default function Clientes() {
       nameRef.current?.focus()
       return
     }
-    const nuevo = { id: uid('cli'), ...form, nombre }
-    update([nuevo, ...items])
-    setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
-    notify({ type: 'success', message: 'Cliente agregado.' })
+    if (editingId) {
+      const idx = items.findIndex((x) => x.id === editingId)
+      if (idx !== -1) {
+        const next = [...items]
+        next[idx] = { ...next[idx], ...form, nombre }
+        update(next)
+        notify({ type: 'success', message: 'Cliente actualizado.' })
+      }
+      setEditingId(null)
+      setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
+    } else {
+      const nuevo = { id: uid('cli'), ...form, nombre }
+      update([nuevo, ...items])
+      setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
+      notify({ type: 'success', message: 'Cliente agregado.' })
+    }
   }
 
   const onWipe = async () => {
@@ -53,12 +66,40 @@ export default function Clientes() {
     }
   }
 
+  const onEdit = (it) => {
+    setEditingId(it.id)
+    setForm({
+      nombre: it.nombre || '',
+      cedula: it.cedula || '',
+      telefono: it.telefono || '',
+      direccion: it.direccion || '',
+    })
+    nameRef.current?.focus()
+  }
+
+  const onCancelEdit = () => {
+    setEditingId(null)
+    setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
+  }
+
+  const onDelete = async (id) => {
+    const ok = await confirm({ title: 'Eliminar cliente', message: '¿Deseas eliminar este cliente?', confirmText: 'Eliminar' })
+    if (!ok) return
+    update(items.filter((x) => x.id !== id))
+    notify({ type: 'warning', message: 'Cliente eliminado.' })
+  }
+
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Clientes</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar cliente</button>
+          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>
+            {editingId ? '💾 Guardar cambios' : '➕ Agregar cliente'}
+          </button>
+          {editingId && (
+            <button type="button" className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onCancelEdit}>Cancelar</button>
+          )}
           <button type="button" className="px-3 py-2 bg-red-100 text-red-700 rounded-lg" onClick={onWipe}>🗑️ Vaciar clientes</button>
         </div>
       </header>
@@ -113,6 +154,7 @@ export default function Clientes() {
               <th className="text-left p-2">Cédula</th>
               <th className="text-left p-2">Teléfono</th>
               <th className="text-left p-2">Dirección</th>
+              <th className="text-left p-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -122,11 +164,17 @@ export default function Clientes() {
                 <td className="p-2">{it.cedula}</td>
                 <td className="p-2">{it.telefono}</td>
                 <td className="p-2">{it.direccion}</td>
+                <td className="p-2">
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="px-2 py-1 rounded border text-xs hover:bg-blue-50 border-blue-300 text-blue-700" onClick={() => onEdit(it)}>Editar</button>
+                    <button type="button" className="px-2 py-1 rounded border text-xs hover:bg-red-50 border-red-300 text-red-700" onClick={() => onDelete(it.id)}>Eliminar</button>
+                  </div>
+                </td>
               </tr>
             ))}
             {paged.length === 0 && (
               <tr>
-                <td colSpan="4" className="p-4 text-center text-gray-500">Sin resultados</td>
+                <td colSpan="5" className="p-4 text-center text-gray-500">Sin resultados</td>
               </tr>
             )}
           </tbody>

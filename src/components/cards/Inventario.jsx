@@ -23,6 +23,7 @@ export default function Inventario() {
     precio: '',
     categoria: '',
   })
+  const [editingId, setEditingId] = useState(null)
   const nameRef = useRef(null)
 
   const filtered = useMemo(() => {
@@ -54,18 +55,39 @@ export default function Inventario() {
       nameRef.current?.focus()
       return
     }
-    const nuevo = {
-      id: uid('prod'),
-      nombre,
-      color: form.color,
-      stock: Number(form.stock || 0),
-      costo: parseMoney(form.costo),
-      precio: parseMoney(form.precio),
-      categoria: form.categoria,
+    if (editingId) {
+      // Guardar cambios de edición
+      const idx = items.findIndex((x) => x.id === editingId)
+      if (idx !== -1) {
+        const next = [...items]
+        next[idx] = {
+          ...next[idx],
+          nombre,
+          color: form.color,
+          stock: Number(form.stock || 0),
+          costo: parseMoney(form.costo),
+          precio: parseMoney(form.precio),
+          categoria: form.categoria,
+        }
+        update(next)
+        notify({ type: 'success', message: 'Producto actualizado.' })
+      }
+      setEditingId(null)
+      setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
+    } else {
+      const nuevo = {
+        id: uid('prod'),
+        nombre,
+        color: form.color,
+        stock: Number(form.stock || 0),
+        costo: parseMoney(form.costo),
+        precio: parseMoney(form.precio),
+        categoria: form.categoria,
+      }
+      update([nuevo, ...items])
+      setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
+      notify({ type: 'success', message: 'Producto agregado al inventario.' })
     }
-    update([nuevo, ...items])
-    setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
-    notify({ type: 'success', message: 'Producto agregado al inventario.' })
   }
 
   const onImport = async (file) => {
@@ -90,12 +112,42 @@ export default function Inventario() {
     }
   }
 
+  const onEdit = (it) => {
+    setEditingId(it.id)
+    setForm({
+      nombre: it.nombre || '',
+      color: it.color || '',
+      stock: String(it.stock ?? ''),
+      costo: String(it.costo ?? ''),
+      precio: String(it.precio ?? ''),
+      categoria: it.categoria || '',
+    })
+    nameRef.current?.focus()
+  }
+
+  const onCancelEdit = () => {
+    setEditingId(null)
+    setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
+  }
+
+  const onDelete = async (id) => {
+    const ok = await confirm({ title: 'Eliminar producto', message: '¿Deseas eliminar este producto?', confirmText: 'Eliminar' })
+    if (!ok) return
+    update(items.filter((x) => x.id !== id))
+    notify({ type: 'warning', message: 'Producto eliminado.' })
+  }
+
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <h3 className="text-lg font-semibold text-gray-800">Inventario</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>➕ Agregar producto</button>
+          <button type="button" className="px-3 py-2 bg-primary-600 text-white rounded-lg" onClick={addItem}>
+            {editingId ? '💾 Guardar cambios' : '➕ Agregar producto'}
+          </button>
+          {editingId && (
+            <button type="button" className="px-3 py-2 bg-gray-100 rounded-lg" onClick={onCancelEdit}>Cancelar</button>
+          )}
           <label className="px-3 py-2 bg-gray-100 rounded-lg cursor-pointer">
             📥 Importar (.xlsx)
             <input type="file" className="hidden" accept=".xlsx,.xls" onChange={(e) => e.target.files[0] && onImport(e.target.files[0])} />
@@ -190,6 +242,7 @@ export default function Inventario() {
               <th className="text-right p-2">Costo</th>
               <th className="text-right p-2">Precio</th>
               <th className="text-left p-2">Categoría</th>
+              <th className="text-left p-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -201,11 +254,17 @@ export default function Inventario() {
                 <td className="p-2 text-right">{formatMoney(it.costo)}</td>
                 <td className="p-2 text-right">{formatMoney(it.precio)}</td>
                 <td className="p-2">{it.categoria}</td>
+                <td className="p-2">
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="px-2 py-1 rounded border text-xs hover:bg-blue-50 border-blue-300 text-blue-700" onClick={() => onEdit(it)}>Editar</button>
+                    <button type="button" className="px-2 py-1 rounded border text-xs hover:bg-red-50 border-red-300 text-red-700" onClick={() => onDelete(it.id)}>Eliminar</button>
+                  </div>
+                </td>
               </tr>
             ))}
             {paged.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-4 text-center text-gray-500">Sin resultados</td>
+                <td colSpan="7" className="p-4 text-center text-gray-500">Sin resultados</td>
               </tr>
             )}
           </tbody>

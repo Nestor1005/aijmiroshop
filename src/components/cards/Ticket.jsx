@@ -9,17 +9,14 @@ const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
 const STORAGE_HISTORY = 'aij-history'
 
-const COMPANY = {
-  name: 'AIJMIROSHOP',
-  email: 'ntarquilopez@gmail.com',
-  address: '6 de octubre y soto mayor',
-}
+const STORAGE_SETTINGS = 'aij-settings'
 
 export default function Ticket({ session }) {
   const { notify } = useUI()
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
   const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
   const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
+  const [settings] = useState(() => loadData(STORAGE_SETTINGS, {}))
 
   const [clientId, setClientId] = useState('')
   const [quickClient, setQuickClient] = useState('')
@@ -27,6 +24,7 @@ export default function Ticket({ session }) {
   const [payment, setPayment] = useState('Efectivo')
   const [discount, setDiscount] = useState(0)
   const [shipping, setShipping] = useState('')
+  const [productQuery, setProductQuery] = useState('')
 
   const ticketRef = useRef(null)
 
@@ -35,6 +33,12 @@ export default function Ticket({ session }) {
   // Subtotal y total
   const subtotal = items.reduce((acc, it) => acc + (Number(it.qty) || 0) * (Number(it.price) || 0), 0)
   const total = Math.max(0, subtotal - Number(discount || 0))
+
+  const filteredProducts = useMemo(() => {
+    const q = productQuery.trim().toLowerCase()
+    if (!q) return products.slice(0, 20)
+    return products.filter(p => [p.nombre, p.color, p.categoria].some(v => String(v || '').toLowerCase().includes(q))).slice(0, 20)
+  }, [products, productQuery])
 
   const addItem = (productId) => {
     const p = products.find((x) => x.id === productId)
@@ -71,10 +75,17 @@ export default function Ticket({ session }) {
 
     // Registrar en historial con estado Pendiente
     const ticket = {
-      id: crypto.randomUUID(),
-      cliente: client?.nombre || 'Cliente',
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      cliente: client?.nombre || quickClient || 'Cliente',
+      clienteId: client?.id || null,
       fecha: new Date().toISOString(),
+      items: items.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })),
+      subtotal,
+      descuento: Number(discount || 0),
       total,
+      envio: shipping || client?.direccion || '',
+      pago: payment,
+      atendidoPor: session?.username || 'Usuario',
       estado: 'Pendiente',
     }
     const next = [ticket, ...history]
@@ -112,16 +123,31 @@ export default function Ticket({ session }) {
           <input className="w-full rounded-lg border-gray-300" placeholder="Dirección" value={shipping} onChange={(e) => setShipping(e.target.value)} />
         </div>
 
-        {/* Productos */}
+        {/* Productos con búsqueda */}
         <div className="space-y-2">
           <label className="block text-sm text-gray-700">Productos</label>
-          <div className="grid grid-cols-2 gap-2">
-            {products.slice(0, 10).map((p) => (
-              <button key={p.id} className="rounded-lg border bg-gray-50 text-left px-2 py-1 text-sm hover:bg-gray-100" onClick={() => addItem(p.id)}>
-                {p.nombre} — {formatMoney(p.precio)}
+          <input
+            className="w-full rounded-lg border-gray-300"
+            placeholder="Buscar por nombre, color o categoría"
+            value={productQuery}
+            onChange={(e) => setProductQuery(e.target.value)}
+          />
+          <div className="max-h-64 overflow-auto border rounded-lg divide-y">
+            {filteredProducts.map((p) => (
+              <button
+                key={p.id}
+                className="w-full text-left px-2 py-2 hover:bg-gray-50"
+                onClick={() => addItem(p.id)}
+                title={`Stock: ${p.stock || 0}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-medium truncate pr-2">{p.nombre}</div>
+                  <div className="text-sm text-gray-600">{formatMoney(p.precio)}</div>
+                </div>
+                <div className="text-xs text-gray-500 truncate">Color: {p.color || '—'} • Cat: {p.categoria || '—'} • Stock: {p.stock || 0}</div>
               </button>
             ))}
-            {products.length === 0 && <div className="text-xs text-gray-500">No hay productos. Agrega en Inventario.</div>}
+            {products.length === 0 && <div className="text-xs text-gray-500 p-2">No hay productos. Agrega en Inventario.</div>}
           </div>
         </div>
 
@@ -147,9 +173,12 @@ export default function Ticket({ session }) {
       <div className="mt-6 flex justify-center">
         <div ref={ticketRef} className="w-full max-w-[480px] bg-white text-gray-900 font-mono text-[14px] leading-6 p-6 border rounded-lg shadow-sm">
           <div className="text-center">
-            <h1 className="text-2xl font-extrabold tracking-widest">{COMPANY.name}</h1>
-            <div className="text-sm mt-1">{COMPANY.email}</div>
-            <div className="text-sm">{COMPANY.address}</div>
+            <h1 className="text-2xl font-extrabold tracking-widest">{settings.ticketCompanyName || 'AIJMIROSHOP'}</h1>
+            {settings.ticketEmail && <div className="text-sm mt-1">{settings.ticketEmail}</div>}
+            {settings.ticketAddress && <div className="text-sm">{settings.ticketAddress}</div>}
+            {Array.isArray(settings.ticketRefs) && settings.ticketRefs.length > 0 && (
+              <div className="text-sm">Cel: {settings.ticketRefs.join(', ')}</div>
+            )}
             <h2 className="mt-4 text-xl font-bold">Orden de Venta</h2>
             <div className="mt-1">{new Date().toLocaleString('es-BO')}</div>
           </div>
@@ -173,7 +202,7 @@ export default function Ticket({ session }) {
                     <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}</div>
                     <div className="font-bold">Bs. {formatMoney(lineTotal)}</div>
                   </div>
-                  <div className="text-sm">P/U: Bs. {formatMoney(it.price)},00 x {Number(it.qty) || 0}</div>
+                  <div className="text-sm">P/U: Bs. {formatMoney(Number(it.price) || 0)} x {Number(it.qty) || 0}</div>
                 </div>
               )
             })}
@@ -202,7 +231,7 @@ export default function Ticket({ session }) {
           <div className="mt-2">Método de Pago: {payment}</div>
 
           <div className="my-4 border-t border-dashed"></div>
-          <div className="text-center">¡Gracias por su compra!</div>
+          <div className="text-center">{settings.ticketFooter || '¡Gracias por su compra!'}</div>
         </div>
       </div>
     </section>
