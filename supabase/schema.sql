@@ -53,22 +53,44 @@ alter table history enable row level security;
 alter table users enable row level security;
 
 -- Public read/write for anon (demo). Replace with proper policies in production.
-create policy if not exists "anon_read_inventory" on inventory for select to anon using (true);
-create policy if not exists "anon_write_inventory" on inventory for insert with check (true);
-create policy if not exists "anon_update_inventory" on inventory for update using (true) with check (true);
-create policy if not exists "anon_delete_inventory" on inventory for delete using (true);
+-- Postgres no soporta IF NOT EXISTS en CREATE POLICY, por eso usamos DROP IF EXISTS antes.
 
-create policy if not exists "anon_read_clients" on clients for select to anon using (true);
-create policy if not exists "anon_write_clients" on clients for insert with check (true);
-create policy if not exists "anon_update_clients" on clients for update using (true) with check (true);
-create policy if not exists "anon_delete_clients" on clients for delete using (true);
+-- inventory
+drop policy if exists "anon_read_inventory" on inventory;
+drop policy if exists "anon_write_inventory" on inventory;
+drop policy if exists "anon_update_inventory" on inventory;
+drop policy if exists "anon_delete_inventory" on inventory;
+create policy "anon_read_inventory" on inventory for select to anon using (true);
+create policy "anon_write_inventory" on inventory for insert to anon with check (true);
+create policy "anon_update_inventory" on inventory for update to anon using (true) with check (true);
+create policy "anon_delete_inventory" on inventory for delete to anon using (true);
 
-create policy if not exists "anon_read_history" on history for select to anon using (true);
-create policy if not exists "anon_write_history" on history for insert with check (true);
-create policy if not exists "anon_update_history" on history for update using (true) with check (true);
-create policy if not exists "anon_delete_history" on history for delete using (true);
+-- clients
+drop policy if exists "anon_read_clients" on clients;
+drop policy if exists "anon_write_clients" on clients;
+drop policy if exists "anon_update_clients" on clients;
+drop policy if exists "anon_delete_clients" on clients;
+create policy "anon_read_clients" on clients for select to anon using (true);
+create policy "anon_write_clients" on clients for insert to anon with check (true);
+create policy "anon_update_clients" on clients for update to anon using (true) with check (true);
+create policy "anon_delete_clients" on clients for delete to anon using (true);
 
-create policy if not exists "anon_read_users" on users for select to anon using (true);
-create policy if not exists "anon_write_users" on users for insert with check (true);
-create policy if not exists "anon_update_users" on users for update using (true) with check (true);
-create policy if not exists "anon_delete_users" on users for delete using (true);
+-- history
+drop policy if exists "anon_read_history" on history;
+drop policy if exists "anon_write_history" on history;
+drop policy if exists "anon_update_history" on history;
+drop policy if exists "anon_delete_history" on history;
+create policy "anon_read_history" on history for select to anon using (true);
+create policy "anon_write_history" on history for insert to anon with check (true);
+create policy "anon_update_history" on history for update to anon using (true) with check (true);
+create policy "anon_delete_history" on history for delete to anon using (true);
+
+-- users
+drop policy if exists "anon_read_users" on users;
+drop policy if exists "anon_write_users" on users;
+drop policy if exists "anon_update_users" on users;
+drop policy if exists "anon_delete_users" on users;
+create policy "anon_read_users" on users for select to anon using (true);
+create policy "anon_write_users" on users for insert to anon with check (true);
+create policy "anon_update_users" on users for update to anon using (true) with check (true);
+create policy "anon_delete_users" on users for delete to anon using (true);
