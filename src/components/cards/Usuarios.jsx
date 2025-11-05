@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { loadData, saveData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
+import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_USERS = 'aij-users'
 
@@ -22,7 +23,7 @@ export default function Usuarios({ session }) {
     saveData(STORAGE_USERS, next)
   }
 
-  const addUser = () => {
+  const addUser = async () => {
     if (!canManage) return
     if (!form.username || !form.password) return
     if (editingId) {
@@ -31,12 +32,19 @@ export default function Usuarios({ session }) {
         const next = [...users]
         next[idx] = { ...next[idx], ...form }
         update(next)
+        if (cloudEnabled()) {
+          try { await cloudUpsert(STORAGE_USERS, next[idx]) } catch (e) { console.error('Cloud upsert (usuario edit):', e) }
+        }
         notify({ type: 'success', message: 'Usuario actualizado.' })
       }
       setEditingId(null)
     } else {
       const nuevo = { id: uid('usr'), ...form }
-      update([nuevo, ...users])
+      const next = [nuevo, ...users]
+      update(next)
+      if (cloudEnabled()) {
+        try { await cloudUpsert(STORAGE_USERS, nuevo) } catch (e) { console.error('Cloud upsert (usuario nuevo):', e) }
+      }
       notify({ type: 'success', message: 'Usuario creado.' })
     }
     setForm({ username: '', role: 'Usuario', password: '', enabled: true, modules: { inventario: true, clientes: true, ticket: true, historial: true, usuarios: false, estadisticas: true, configuracion: true } })
@@ -55,16 +63,64 @@ export default function Usuarios({ session }) {
   const onDelete = async (id) => {
     const ok = await confirm({ title: 'Eliminar usuario', message: 'Esta acción no se puede deshacer.', confirmText: 'Eliminar' })
     if (!ok) return
-    update(users.filter((u) => u.id !== id))
+    const next = users.filter((u) => u.id !== id)
+    update(next)
+    if (cloudEnabled()) {
+      try { await cloudDelete(STORAGE_USERS, id) } catch (e) { console.error('Cloud delete (usuario):', e) }
+    }
     notify({ type: 'warning', message: 'Usuario eliminado.' })
   }
 
-  const toggleEnabled = (id) => {
+  const toggleEnabled = async (id) => {
     const next = users.map((u) => (u.id === id ? { ...u, enabled: u.enabled === false ? true : false } : u))
     update(next)
     const u = next.find((x) => x.id === id)
+    if (cloudEnabled() && u) {
+      try { await cloudUpsert(STORAGE_USERS, u) } catch (e) { console.error('Cloud upsert (toggle usuario):', e) }
+    }
     notify({ type: 'info', message: `Usuario ${u?.enabled ? 'habilitado' : 'deshabilitado'}.` })
   }
+
+  // Carga desde la nube y suscripción realtime
+  useEffect(() => {
+    let cancelled = false
+    async function loadCloud() {
+      if (!cloudEnabled()) return
+      try {
+        const remote = await cloudList(STORAGE_USERS)
+        const local = loadData(STORAGE_USERS, [])
+        if (!cancelled && Array.isArray(remote)) {
+          if ((remote?.length || 0) === 0 && (local?.length || 0) > 0) {
+            try { await cloudReplaceAll(STORAGE_USERS, local) } catch {}
+          } else {
+            setUsers(remote)
+            saveData(STORAGE_USERS, remote)
+          }
+        }
+      } catch (e) {
+        console.error('Cloud load error (usuarios):', e)
+      }
+    }
+    loadCloud()
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_USERS, ({ event, new: n, old }) => {
+        setUsers((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_USERS, next)
+          return next
+        })
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {} }
+  }, [])
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
