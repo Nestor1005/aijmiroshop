@@ -4,7 +4,7 @@ import { formatMoney } from '../../utils/formatNumbers'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { useUI } from '../ui/UIProvider'
-import { cloudEnabled, cloudList, cloudUpsert } from '../../services/cloudData'
+import { cloudEnabled, cloudList, cloudUpsert, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -120,7 +120,25 @@ export default function Ticket({ session }) {
       }
     }
     loadCloud()
-    return () => { cancelled = true }
+    // Realtime for clients in ticket selector
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_CLIENTS, ({ event, new: n, old }) => {
+        setClients((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_CLIENTS, next)
+          return next
+        })
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {} }
   }, [])
 
   return (

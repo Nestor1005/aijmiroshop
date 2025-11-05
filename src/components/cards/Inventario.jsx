@@ -3,7 +3,7 @@ import { exportToXLSX, importFromXLSX } from '../../utils/exportExcel'
 import { formatMoney, parseMoney } from '../../utils/formatNumbers'
 import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
-import { cloudEnabled, cloudList, cloudReplaceAll } from '../../services/cloudData'
+import { cloudEnabled, cloudList, cloudReplaceAll, cloudUpsert, cloudDelete, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_KEY = 'aij-inventory'
 
@@ -46,13 +46,6 @@ export default function Inventario() {
   const update = async (next) => {
     setItems(next)
     saveData(STORAGE_KEY, next)
-    if (cloudEnabled()) {
-      try {
-        await cloudReplaceAll(STORAGE_KEY, next)
-      } catch (e) {
-        console.error('Cloud sync error (inventario):', e)
-      }
-    }
   }
 
   const addItem = async () => {
@@ -78,6 +71,9 @@ export default function Inventario() {
           categoria: form.categoria,
         }
         await update(next)
+        if (cloudEnabled()) {
+          try { await cloudUpsert(STORAGE_KEY, next[idx]) } catch (e) { console.error('Cloud upsert (inventario edit):', e) }
+        }
         notify({ type: 'success', message: 'Producto actualizado.' })
       }
       setEditingId(null)
@@ -92,7 +88,11 @@ export default function Inventario() {
         precio: parseMoney(form.precio),
         categoria: form.categoria,
       }
-      await update([nuevo, ...items])
+      const nextList = [nuevo, ...items]
+      await update(nextList)
+      if (cloudEnabled()) {
+        try { await cloudUpsert(STORAGE_KEY, nuevo) } catch (e) { console.error('Cloud upsert (inventario nuevo):', e) }
+      }
       setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
       notify({ type: 'success', message: 'Producto agregado al inventario.' })
     }
@@ -116,6 +116,9 @@ export default function Inventario() {
     if (ok) {
       await update([])
       wipeData(STORAGE_KEY)
+      if (cloudEnabled()) {
+        try { await cloudReplaceAll(STORAGE_KEY, []) } catch (e) { console.error('Cloud wipe (inventario):', e) }
+      }
       notify({ type: 'warning', message: 'Inventario vaciado.' })
     }
   }
@@ -141,7 +144,11 @@ export default function Inventario() {
   const onDelete = async (id) => {
     const ok = await confirm({ title: 'Eliminar producto', message: '¿Deseas eliminar este producto?', confirmText: 'Eliminar' })
     if (!ok) return
-    await update(items.filter((x) => x.id !== id))
+    const next = items.filter((x) => x.id !== id)
+    await update(next)
+    if (cloudEnabled()) {
+      try { await cloudDelete(STORAGE_KEY, id) } catch (e) { console.error('Cloud delete (inventario):', e) }
+    }
     notify({ type: 'warning', message: 'Producto eliminado.' })
   }
 
@@ -165,7 +172,25 @@ export default function Inventario() {
       }
     }
     loadCloud()
-    return () => { cancelled = true }
+    // Realtime subscription
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_KEY, ({ event, new: n, old }) => {
+        setItems((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_KEY, next)
+          return next
+        })
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {} }
   }, [])
 
   return (

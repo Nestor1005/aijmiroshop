@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
-import { cloudEnabled, cloudList, cloudReplaceAll } from '../../services/cloudData'
+import { cloudEnabled, cloudList, cloudReplaceAll, cloudUpsert, cloudDelete, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_KEY = 'aij-clients'
 
@@ -31,14 +31,6 @@ export default function Clientes() {
   const update = async (next) => {
     setItems(next)
     saveData(STORAGE_KEY, next)
-    if (cloudEnabled()) {
-      try {
-        await cloudReplaceAll(STORAGE_KEY, next)
-      } catch (e) {
-        console.error('Cloud sync error (clientes):', e)
-        notify({ type: 'error', message: 'No se pudo sincronizar con la nube.' })
-      }
-    }
   }
 
   const addItem = async () => {
@@ -54,13 +46,20 @@ export default function Clientes() {
         const next = [...items]
         next[idx] = { ...next[idx], ...form, nombre }
         await update(next)
+        if (cloudEnabled()) {
+          try { await cloudUpsert(STORAGE_KEY, next[idx]) } catch (e) { console.error('Cloud upsert (cliente):', e) }
+        }
         notify({ type: 'success', message: 'Cliente actualizado.' })
       }
       setEditingId(null)
       setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
     } else {
       const nuevo = { id: uid('cli'), ...form, nombre }
-      await update([nuevo, ...items])
+      const nextList = [nuevo, ...items]
+      await update(nextList)
+      if (cloudEnabled()) {
+        try { await cloudUpsert(STORAGE_KEY, nuevo) } catch (e) { console.error('Cloud upsert (cliente nuevo):', e) }
+      }
       setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
       notify({ type: 'success', message: 'Cliente agregado.' })
     }
@@ -71,6 +70,9 @@ export default function Clientes() {
     if (ok) {
       await update([])
       wipeData(STORAGE_KEY)
+      if (cloudEnabled()) {
+        try { await cloudReplaceAll(STORAGE_KEY, []) } catch (e) { console.error('Cloud wipe (clientes):', e) }
+      }
       notify({ type: 'warning', message: 'Listado de clientes vaciado.' })
     }
   }
@@ -94,7 +96,11 @@ export default function Clientes() {
   const onDelete = async (id) => {
     const ok = await confirm({ title: 'Eliminar cliente', message: '¿Deseas eliminar este cliente?', confirmText: 'Eliminar' })
     if (!ok) return
-    await update(items.filter((x) => x.id !== id))
+    const next = items.filter((x) => x.id !== id)
+    await update(next)
+    if (cloudEnabled()) {
+      try { await cloudDelete(STORAGE_KEY, id) } catch (e) { console.error('Cloud delete (cliente):', e) }
+    }
     notify({ type: 'warning', message: 'Cliente eliminado.' })
   }
 
@@ -119,8 +125,27 @@ export default function Clientes() {
       }
     }
     loadCloud()
+    // Realtime subscription
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_KEY, ({ event, new: n, old }) => {
+        setItems((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_KEY, next)
+          return next
+        })
+      })
+    }
     return () => {
       cancelled = true
+      try { unsub() } catch {}
     }
   }, [])
 

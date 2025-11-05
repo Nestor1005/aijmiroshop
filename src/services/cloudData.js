@@ -93,3 +93,23 @@ export async function cloudReplaceAll(key, rows) {
   }
   return true
 }
+
+// Realtime subscription for ultra-fast cross-device sync
+export function cloudSubscribe(key, handler) {
+  if (!cloudEnabled()) return () => {}
+  const table = tables[key]
+  if (!table) return () => {}
+  const channel = supabase
+    .channel(`realtime:${table}:${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => {
+      const evt = payload.eventType
+      const newRow = payload.new ? toApp(key, payload.new) : null
+      const oldRow = payload.old ? toApp(key, payload.old) : null
+      try { handler({ event: evt, new: newRow, old: oldRow }) } catch {}
+    })
+    .subscribe()
+
+  return () => {
+    try { supabase.removeChannel(channel) } catch {}
+  }
+}

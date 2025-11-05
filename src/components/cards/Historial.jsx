@@ -4,7 +4,7 @@ import { formatMoney } from '../../utils/formatNumbers'
 import { useUI } from '../ui/UIProvider'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
-import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll } from '../../services/cloudData'
+import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_HISTORY = 'aij-history'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -33,14 +33,6 @@ export default function Historial() {
   const update = async (next) => {
     setItems(next)
     saveData(STORAGE_HISTORY, next)
-    if (cloudEnabled()) {
-      try {
-        // For batch changes, replace all for simplicity
-        await cloudReplaceAll(STORAGE_HISTORY, next)
-      } catch (e) {
-        console.error('Cloud sync error (historial):', e)
-      }
-    }
   }
 
   const completeTicket = async (id) => {
@@ -69,6 +61,9 @@ export default function Historial() {
     const next = [...items]
     next[idx] = { ...t, estado: 'Completado' }
     await update(next)
+    if (cloudEnabled()) {
+      try { await cloudUpsert(STORAGE_HISTORY, next[idx]) } catch (e) { console.error('Cloud upsert (historial completar):', e) }
+    }
     notify({ type: 'success', message: `Ticket completado. ${cambios} productos actualizados.` })
   }
 
@@ -77,6 +72,9 @@ export default function Historial() {
     if (!ok) return
     const next = items.filter((t) => t.id !== id)
     await update(next)
+    if (cloudEnabled()) {
+      try { await cloudDelete(STORAGE_HISTORY, id) } catch (e) { console.error('Cloud delete (historial):', e) }
+    }
     notify({ type: 'warning', message: 'Ticket eliminado.' })
   }
 
@@ -157,6 +155,9 @@ export default function Historial() {
               const ok = await confirm({ title: 'Vaciar historial', message: 'Se eliminarán todos los tickets del historial.', confirmText: 'Vaciar' })
               if (!ok) return
               await update([])
+              if (cloudEnabled()) {
+                try { await cloudReplaceAll(STORAGE_HISTORY, []) } catch (e) { console.error('Cloud wipe (historial):', e) }
+              }
               notify({ type: 'warning', message: 'Historial vaciado.' })
             }}
           >
@@ -268,6 +269,24 @@ export function useCloudHistoryLoader(setItems) {
       }
     }
     loadCloud()
-    return () => { cancelled = true }
+    // Realtime subscription
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_HISTORY, ({ event, new: n, old }) => {
+        setItems((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_HISTORY, next)
+          return next
+        })
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {} }
   }, [setItems])
 }
