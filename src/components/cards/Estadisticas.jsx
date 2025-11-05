@@ -89,6 +89,13 @@ export default function Estadisticas() {
   }, [completed, start])
 
   const maxDia = seriesDias.reduce((m, d) => Math.max(m, d.total), 0) || 1
+  // Configuración responsive para el gráfico de barras
+  const barWidth = 12 // px en móvil (w-3)
+  const barWidthSm = 18 // px en >= sm (w-4.5 aprox)
+  const gapPx = 4 // Tailwind gap-1
+  const paddingPx = 24 // p-3 en el contenedor interior
+  const chartWidthMobile = seriesDias.length * (barWidth + gapPx) + paddingPx * 2
+  const labelStep = Math.max(1, Math.ceil(seriesDias.length / 12)) // máx ~12 etiquetas visibles en móvil
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
@@ -171,13 +178,31 @@ export default function Estadisticas() {
       {/* Ventas por día */}
       <div className="mb-6">
         <div className="text-sm font-medium mb-2">Ventas por día</div>
-        <div className="h-40 flex items-end gap-2 border rounded-lg p-3 bg-white">
-          {seriesDias.map((d) => (
-            <div key={d.key} className="flex-1 flex flex-col items-center">
-              <div className="w-4 sm:w-6 bg-primary-500 rounded-t" style={{ height: `${(d.total / maxDia) * 100 || 0}%` }} title={`Bs. ${formatMoney(d.total)}`}></div>
-              <div className="text-[10px] mt-1 text-gray-500">{d.label}</div>
+        <div className="border rounded-lg bg-white">
+          <div className="overflow-x-auto">
+            <div
+              className="h-40 flex items-end gap-1 p-3"
+              style={{ width: `${Math.max(chartWidthMobile, 320)}px` }}
+            >
+              {seriesDias.map((d, i) => (
+                <div key={d.key} className="flex flex-col items-center" style={{ width: `${barWidth}px` }}>
+                  <div
+                    className="w-full sm:hidden bg-primary-500 rounded-t"
+                    style={{ height: `${(d.total / maxDia) * 100 || 0}%` }}
+                    title={`Bs. ${formatMoney(d.total)}`}
+                  />
+                  <div
+                    className="hidden sm:block bg-primary-500 rounded-t"
+                    style={{ width: `${barWidthSm}px`, height: `${(d.total / maxDia) * 100 || 0}%` }}
+                    title={`Bs. ${formatMoney(d.total)}`}
+                  />
+                  <div className="text-[10px] mt-1 text-gray-500 whitespace-nowrap">
+                    {i % labelStep === 0 ? d.label : ''}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
