@@ -25,12 +25,18 @@ export default function Usuarios({ session }) {
 
   const addUser = async () => {
     if (!canManage) return
-    if (!form.username || !form.password) return
+    const username = String(form.username || '').trim()
+    const password = String(form.password || '').trim()
+    const role = String(form.role || 'Usuario').trim()
+    if (!username || !password) return
+    // Evitar duplicados por nombre de usuario (case-insensitive)
+    const exists = users.some((u) => String(u.username || '').trim().toLowerCase() === username.toLowerCase() && (!editingId || u.id !== editingId))
+    if (exists) { notify({ type: 'warning', message: 'Ese nombre de usuario ya existe.' }); return }
     if (editingId) {
       const idx = users.findIndex((u) => u.id === editingId)
       if (idx !== -1) {
         const next = [...users]
-        next[idx] = { ...next[idx], ...form }
+        next[idx] = { ...next[idx], username, role, password, enabled: !!form.enabled, modules: { ...form.modules } }
         update(next)
         if (cloudEnabled()) {
           try { await cloudUpsert(STORAGE_USERS, next[idx]) } catch (e) { console.error('Cloud upsert (usuario edit):', e) }
@@ -39,7 +45,7 @@ export default function Usuarios({ session }) {
       }
       setEditingId(null)
     } else {
-      const nuevo = { id: uid('usr'), ...form }
+      const nuevo = { id: uid('usr'), username, role, password, enabled: !!form.enabled, modules: { ...form.modules } }
       const next = [nuevo, ...users]
       update(next)
       if (cloudEnabled()) {

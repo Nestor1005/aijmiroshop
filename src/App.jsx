@@ -24,9 +24,19 @@ export const setSession = (session) => localStorage.setItem(storageKey, JSON.str
 export const clearSession = () => localStorage.removeItem(storageKey)
 
 export const validateLogin = async ({ role, username, password }) => {
+  const normalizeRole = (r) => {
+    const x = String(r || '').trim().toLowerCase()
+    if (x.startsWith('admin')) return 'administrador'
+    if (x.startsWith('user') || x.startsWith('usu')) return 'usuario'
+    return x
+  }
+  const normRole = normalizeRole(role)
+  const normUser = String(username || '').trim().toLowerCase()
+  const normPass = String(password || '').trim()
+
   // 1) Demo credenciales fijas mantienen acceso rápido
-  if (role === 'Administrador' && username === CREDENTIALS.admin.user && password === CREDENTIALS.admin.pass) return true
-  if (role === 'Usuario' && username === CREDENTIALS.user.user && password === CREDENTIALS.user.pass) return true
+  if (normRole === 'administrador' && normUser === CREDENTIALS.admin.user.toLowerCase() && normPass === CREDENTIALS.admin.pass) return true
+  if (normRole === 'usuario' && normUser === CREDENTIALS.user.user.toLowerCase() && normPass === CREDENTIALS.user.pass) return true
 
   // 2) Buscar usuarios guardados (nube si está habilitada; sino local)
   let users = []
@@ -40,11 +50,11 @@ export const validateLogin = async ({ role, username, password }) => {
     users = loadData('aij-users', [])
   }
 
-  const u = users.find((x) => x.username === username)
+  const u = users.find((x) => String(x.username || '').trim().toLowerCase() === normUser)
   if (!u) return false
   if (u.enabled === false) return false
-  if (u.role !== role) return false
-  if (String(u.password || '') !== String(password || '')) return false
+  if (normalizeRole(u.role) !== normRole) return false
+  if (String(u.password || '').trim() !== normPass) return false
   return true
 }
 
