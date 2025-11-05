@@ -44,7 +44,26 @@ export default function Ticket({ session }) {
   const addItem = (productId) => {
     const p = products.find((x) => x.id === productId)
     if (!p) return
-    setItems((prev) => [{ id: p.id, name: p.nombre, price: p.precio, qty: 1 }, ...prev])
+    const stock = Number(p.stock || 0)
+    if (stock <= 0) {
+      notify({ type: 'warning', message: 'Sin stock disponible para este producto.' })
+      return
+    }
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.id === p.id)
+      if (idx !== -1) {
+        const current = prev[idx]
+        const newQty = Math.min(stock, Number(current.qty || 0) + 1)
+        if (newQty === current.qty) {
+          notify({ type: 'info', message: 'Alcanzaste el stock disponible.' })
+          return prev
+        }
+        const next = [...prev]
+        next[idx] = { ...current, qty: newQty }
+        return next
+      }
+      return [{ id: p.id, name: p.nombre, price: p.precio, qty: 1 }, ...prev]
+    })
   }
 
   const registerQuickClient = () => {
@@ -241,10 +260,10 @@ export default function Ticket({ session }) {
           <div className="my-4 border-t border-dashed"></div>
 
           <div className="space-y-4">
-            {items.map((it, idx) => {
+            {items.map((it) => {
               const lineTotal = (Number(it.qty) || 0) * (Number(it.price) || 0)
               return (
-                <div key={idx}>
+                <div key={it.id}>
                   <div className="flex justify-between">
                     <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}</div>
                     <div className="font-bold">Bs. {formatMoney(lineTotal)}</div>
