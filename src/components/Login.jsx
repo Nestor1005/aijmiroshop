@@ -23,17 +23,24 @@ export default function Login({ onValidate, onLogin }) {
     setPassword(suggested.p)
   }, [suggested])
 
-  const submit = (e) => {
+  const [loading, setLoading] = useState(false)
+  const submit = async (e) => {
     e.preventDefault()
+    if (loading) return
     setError('')
-    const ok = onValidate({ role, username, password })
-    if (!ok) {
-      setError('Credenciales inválidas.')
-      return
+    setLoading(true)
+    try {
+      const ok = await Promise.resolve(onValidate({ role, username, password }))
+      if (!ok) {
+        setError('Credenciales inválidas.')
+        return
+      }
+      // Persistir sesión (simple: localStorage)
+      onLogin({ role, username, remember, ts: Date.now() })
+      navigate('/', { replace: true })
+    } finally {
+      setLoading(false)
     }
-    // Persistir sesión (simple: localStorage)
-    onLogin({ role, username, remember, ts: Date.now() })
-    navigate('/', { replace: true })
   }
 
   return (
@@ -87,9 +94,10 @@ export default function Login({ onValidate, onLogin }) {
 
           <button
             type="submit"
-            className="w-full py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-medium transition"
+            disabled={loading}
+            className="w-full py-2.5 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white font-medium transition"
           >
-            Ingresar
+            {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
 

@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
+import { loadData } from './utils/dataManager'
+import { cloudEnabled, cloudList } from './services/cloudData'
 
 // Reglas de credenciales fijas (pueden migrar a backend/Supabase luego)
 const CREDENTIALS = {
@@ -21,14 +23,29 @@ export const getSession = () => {
 export const setSession = (session) => localStorage.setItem(storageKey, JSON.stringify(session))
 export const clearSession = () => localStorage.removeItem(storageKey)
 
-export const validateLogin = ({ role, username, password }) => {
-  if (role === 'Administrador') {
-    return username === CREDENTIALS.admin.user && password === CREDENTIALS.admin.pass
+export const validateLogin = async ({ role, username, password }) => {
+  // 1) Demo credenciales fijas mantienen acceso rápido
+  if (role === 'Administrador' && username === CREDENTIALS.admin.user && password === CREDENTIALS.admin.pass) return true
+  if (role === 'Usuario' && username === CREDENTIALS.user.user && password === CREDENTIALS.user.pass) return true
+
+  // 2) Buscar usuarios guardados (nube si está habilitada; sino local)
+  let users = []
+  try {
+    if (cloudEnabled()) {
+      users = (await cloudList('aij-users')) || []
+    } else {
+      users = loadData('aij-users', [])
+    }
+  } catch {
+    users = loadData('aij-users', [])
   }
-  if (role === 'Usuario') {
-    return username === CREDENTIALS.user.user && password === CREDENTIALS.user.pass
-  }
-  return false
+
+  const u = users.find((x) => x.username === username)
+  if (!u) return false
+  if (u.enabled === false) return false
+  if (u.role !== role) return false
+  if (String(u.password || '') !== String(password || '')) return false
+  return true
 }
 
 // Rutas protegidas por rol
