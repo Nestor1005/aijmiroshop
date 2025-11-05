@@ -61,14 +61,43 @@ export default function Clientes() {
       </header>
 
       <div className="grid md:grid-cols-4 gap-3 mb-4">
-        <input className="rounded-lg border-gray-300" placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Cédula de identidad" value={form.cedula} onChange={(e) => setForm({ ...form, cedula: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Celular o teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Dirección" value={form.direccion} onChange={(e) => setForm({ ...form, direccion: e.target.value })} />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Nombre"
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Cédula de identidad"
+          value={form.cedula}
+          onChange={(e) => setForm({ ...form, cedula: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Celular o teléfono"
+          value={form.telefono}
+          onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Dirección"
+          value={form.direccion}
+          onChange={(e) => setForm({ ...form, direccion: e.target.value })}
+        />
       </div>
 
       <div className="mb-4">
-        <input className="rounded-lg border-gray-300 w-full" placeholder="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Buscar"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
       <div className="overflow-auto border rounded-lg">

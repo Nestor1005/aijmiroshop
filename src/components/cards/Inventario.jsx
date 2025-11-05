@@ -103,18 +103,71 @@ export default function Inventario() {
       </header>
 
       <div className="grid md:grid-cols-3 gap-3 mb-4">
-        <input className="rounded-lg border-gray-300" placeholder="Buscar" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <input className="rounded-lg border-gray-300" type="number" placeholder="Stock mínimo" value={minStock} onChange={(e) => setMinStock(e.target.value)} />
-        <input className="rounded-lg border-gray-300" type="number" placeholder="Stock máximo" value={maxStock} onChange={(e) => setMaxStock(e.target.value)} />
+        <input
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Buscar"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <input
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          type="number"
+          placeholder="Stock mínimo"
+          value={minStock}
+          onChange={(e) => setMinStock(e.target.value)}
+        />
+        <input
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          type="number"
+          placeholder="Stock máximo"
+          value={maxStock}
+          onChange={(e) => setMaxStock(e.target.value)}
+        />
       </div>
 
       <div className="grid md:grid-cols-6 gap-3 mb-4">
-        <input className="rounded-lg border-gray-300" placeholder="Nombre del producto" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
-        <input className="rounded-lg border-gray-300" type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Costo (Bs.)" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Precio (Bs.)" value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })} />
-        <input className="rounded-lg border-gray-300" placeholder="Categoría" value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Nombre del producto"
+          value={form.nombre}
+          onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Color"
+          value={form.color}
+          onChange={(e) => setForm({ ...form, color: e.target.value })}
+        />
+        <input
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          type="number"
+          placeholder="Stock"
+          value={form.stock}
+          onChange={(e) => setForm({ ...form, stock: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Costo (Bs.)"
+          value={form.costo}
+          onChange={(e) => setForm({ ...form, costo: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Precio (Bs.)"
+          value={form.precio}
+          onChange={(e) => setForm({ ...form, precio: e.target.value })}
+        />
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          placeholder="Categoría"
+          value={form.categoria}
+          onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+        />
       </div>
 
       {/* Tabla */}
