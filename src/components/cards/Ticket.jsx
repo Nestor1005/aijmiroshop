@@ -3,12 +3,14 @@ import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { useUI } from '../ui/UIProvider'
 
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
 const STORAGE_HISTORY = 'aij-history'
 
 export default function Ticket() {
+  const { notify } = useUI()
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
   const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
   const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
@@ -67,6 +69,7 @@ export default function Ticket() {
     const next = [ticket, ...history]
     setHistory(next)
     saveData(STORAGE_HISTORY, next)
+    notify({ type: 'success', message: 'Ticket capturado y registrado como Pendiente.' })
   }
 
   return (

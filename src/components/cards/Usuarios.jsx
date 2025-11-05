@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
+import { useUI } from '../ui/UIProvider'
 
 const STORAGE_USERS = 'aij-users'
 
 // Estructura simple: { id, username, role, modules: { inventario:true,... }, password }
 export default function Usuarios({ session }) {
+  const { notify } = useUI()
   const [users, setUsers] = useState(() => loadData(STORAGE_USERS, [
     { id: 'admin', username: 'Anahi', role: 'Administrador', password: '2025', modules: { inventario: true, clientes: true, ticket: true, historial: true, usuarios: true, estadisticas: true, configuracion: true } },
     { id: 'user', username: 'Usuario', role: 'Usuario', password: '2025', modules: { inventario: true, clientes: true, ticket: true, historial: true, usuarios: false, estadisticas: true, configuracion: true } },
@@ -25,6 +27,7 @@ export default function Usuarios({ session }) {
     const nuevo = { id: crypto.randomUUID(), ...form }
     update([nuevo, ...users])
     setForm({ username: '', role: 'Usuario', password: '', modules: { inventario: true, clientes: true, ticket: true, historial: true, usuarios: false, estadisticas: true, configuracion: true } })
+    notify({ type: 'success', message: 'Usuario creado.' })
   }
 
   return (

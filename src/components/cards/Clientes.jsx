@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { loadData, saveData, wipeData } from '../../utils/dataManager'
+import { useUI } from '../ui/UIProvider'
 
 const STORAGE_KEY = 'aij-clients'
 
 export default function Clientes() {
+  const { notify, confirm } = useUI()
   const [items, setItems] = useState(() => loadData(STORAGE_KEY, []))
   const [query, setQuery] = useState('')
   const [perPage, setPerPage] = useState(10)
@@ -33,12 +35,15 @@ export default function Clientes() {
     const nuevo = { id: crypto.randomUUID(), ...form }
     update([nuevo, ...items])
     setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
+    notify({ type: 'success', message: 'Cliente agregado.' })
   }
 
-  const onWipe = () => {
-    if (confirm('¿Vaciar clientes?')) {
+  const onWipe = async () => {
+    const ok = await confirm({ title: 'Vaciar clientes', message: 'Esta acción no se puede deshacer.', confirmText: 'Vaciar', cancelText: 'Cancelar' })
+    if (ok) {
       update([])
       wipeData(STORAGE_KEY)
+      notify({ type: 'warning', message: 'Listado de clientes vaciado.' })
     }
   }
 

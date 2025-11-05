@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { exportToXLSX, importFromXLSX } from '../../utils/exportExcel'
 import { formatMoney, parseMoney } from '../../utils/formatNumbers'
 import { loadData, saveData, wipeData } from '../../utils/dataManager'
+import { useUI } from '../ui/UIProvider'
 
 const STORAGE_KEY = 'aij-inventory'
 
 export default function Inventario() {
+  const { notify, confirm } = useUI()
   const [items, setItems] = useState(() => loadData(STORAGE_KEY, []))
   const [query, setQuery] = useState('')
   const [minStock, setMinStock] = useState('')
@@ -56,6 +58,7 @@ export default function Inventario() {
     }
     update([nuevo, ...items])
     setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
+    notify({ type: 'success', message: 'Producto agregado al inventario.' })
   }
 
   const onImport = async (file) => {
@@ -71,10 +74,12 @@ export default function Inventario() {
     exportToXLSX(template, 'formato_inventario.xlsx')
   }
 
-  const onWipe = () => {
-    if (confirm('¿Vaciar inventario? Esta acción no se puede deshacer.')) {
+  const onWipe = async () => {
+    const ok = await confirm({ title: 'Vaciar inventario', message: 'Esta acción no se puede deshacer.', confirmText: 'Vaciar', cancelText: 'Cancelar' })
+    if (ok) {
       update([])
       wipeData(STORAGE_KEY)
+      notify({ type: 'warning', message: 'Inventario vaciado.' })
     }
   }
 
