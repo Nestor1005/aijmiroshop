@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { cloudEnabled } from '../services/cloudData'
 
 /**
  * Pantalla de Login con selector de rol, validación y recordatorio de sesión.
@@ -19,9 +20,18 @@ export default function Login({ onValidate, onLogin }) {
     setError('')
     setLoading(true)
     try {
-      const ok = await Promise.resolve(onValidate({ role, username, password }))
+      const res = await Promise.resolve(onValidate({ role, username, password }))
+      const ok = typeof res === 'boolean' ? res : !!res?.ok
       if (!ok) {
-        setError('Credenciales inválidas.')
+        const reason = res?.reason
+        let msg = 'Credenciales inválidas.'
+        if (reason === 'cloud-disabled') msg = 'Modo local: este usuario no existe en este dispositivo (habilita Supabase o crea el usuario aquí).'
+        else if (reason === 'cloud-error') msg = 'Error conectando a la nube. Verifica URL/Key de Supabase.'
+        else if (reason === 'not-found') msg = 'El usuario no existe.'
+        else if (reason === 'disabled') msg = 'Usuario deshabilitado.'
+        else if (reason === 'role-mismatch') msg = 'El rol seleccionado no coincide con la cuenta.'
+        else if (reason === 'password') msg = 'Contraseña incorrecta.'
+        setError(msg)
         return
       }
       // Persistir sesión (simple: localStorage)
@@ -37,6 +47,11 @@ export default function Login({ onValidate, onLogin }) {
       <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8">
         <h1 className="text-2xl font-semibold text-gray-800 mb-1 text-center">AIJMIROSHOP</h1>
         <p className="text-sm text-gray-500 mb-6 text-center">Acceso al sistema</p>
+        <div className="flex justify-center mb-4">
+          <span className={`text-xs px-2 py-1 rounded ${cloudEnabled() ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+            {cloudEnabled() ? 'Nube (Supabase) activa' : 'Modo local (sin Supabase)'}
+          </span>
+        </div>
 
         <form onSubmit={submit} className="space-y-4">
           <div>

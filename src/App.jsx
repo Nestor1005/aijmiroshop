@@ -35,11 +35,12 @@ export const validateLogin = async ({ role, username, password }) => {
   const normPass = String(password || '').trim()
 
   // 1) Demo credenciales fijas mantienen acceso rápido
-  if (normRole === 'administrador' && normUser === CREDENTIALS.admin.user.toLowerCase() && normPass === CREDENTIALS.admin.pass) return true
-  if (normRole === 'usuario' && normUser === CREDENTIALS.user.user.toLowerCase() && normPass === CREDENTIALS.user.pass) return true
+  if (normRole === 'administrador' && normUser === CREDENTIALS.admin.user.toLowerCase() && normPass === CREDENTIALS.admin.pass) return { ok: true, via: 'demo' }
+  if (normRole === 'usuario' && normUser === CREDENTIALS.user.user.toLowerCase() && normPass === CREDENTIALS.user.pass) return { ok: true, via: 'demo' }
 
   // 2) Buscar usuarios guardados (nube si está habilitada; sino local)
   let users = []
+  let cloudError = false
   try {
     if (cloudEnabled()) {
       users = (await cloudList('aij-users')) || []
@@ -47,15 +48,20 @@ export const validateLogin = async ({ role, username, password }) => {
       users = loadData('aij-users', [])
     }
   } catch {
+    cloudError = true
     users = loadData('aij-users', [])
   }
 
   const u = users.find((x) => String(x.username || '').trim().toLowerCase() === normUser)
-  if (!u) return false
-  if (u.enabled === false) return false
-  if (normalizeRole(u.role) !== normRole) return false
-  if (String(u.password || '').trim() !== normPass) return false
-  return true
+  if (!u) {
+    if (!cloudEnabled()) return { ok: false, reason: 'cloud-disabled' }
+    if (cloudError) return { ok: false, reason: 'cloud-error' }
+    return { ok: false, reason: 'not-found' }
+  }
+  if (u.enabled === false) return { ok: false, reason: 'disabled' }
+  if (normalizeRole(u.role) !== normRole) return { ok: false, reason: 'role-mismatch' }
+  if (String(u.password || '').trim() !== normPass) return { ok: false, reason: 'password' }
+  return { ok: true }
 }
 
 // Rutas protegidas por rol
