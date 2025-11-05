@@ -5,6 +5,7 @@ import { useUI } from '../ui/UIProvider'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
+import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
 
 const STORAGE_HISTORY = 'aij-history'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -83,7 +84,7 @@ export default function Historial() {
     // Renderizar una plantilla similar a la del componente Ticket
     const container = ticketRef.current
     if (!container) return
-    const s = loadData('aij-settings', {})
+  const s = loadData('aij-settings', SETTINGS_DEFAULTS)
     const companyName = s.ticketCompanyName || 'AIJMIROSHOP'
     const companyEmail = s.ticketEmail || ''
     const companyAddress = s.ticketAddress || ''

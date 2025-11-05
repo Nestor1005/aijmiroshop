@@ -5,6 +5,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { useUI } from '../ui/UIProvider'
 import { cloudEnabled, cloudList, cloudUpsert, cloudSubscribe } from '../../services/cloudData'
+import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
 
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -17,7 +18,7 @@ export default function Ticket({ session }) {
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
   const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
   const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
-  const [settings] = useState(() => loadData(STORAGE_SETTINGS, {}))
+  const [settings] = useState(() => loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS))
 
   const [clientId, setClientId] = useState('')
   const [quickClient, setQuickClient] = useState('')
@@ -239,7 +240,7 @@ export default function Ticket({ session }) {
       <div className="mt-6 flex justify-center">
         <div ref={ticketRef} className="w-full max-w-[480px] bg-white text-gray-900 font-mono text-[14px] leading-6 p-6 border rounded-lg shadow-sm">
           <div className="text-center">
-            <h1 className="text-2xl font-extrabold tracking-widest">{settings.ticketCompanyName || 'AIJMIROSHOP'}</h1>
+            <h1 className="text-2xl font-extrabold tracking-widest">{settings.ticketCompanyName || SETTINGS_DEFAULTS.ticketCompanyName}</h1>
             {settings.ticketEmail && <div className="text-sm mt-1">{settings.ticketEmail}</div>}
             {settings.ticketAddress && <div className="text-sm">{settings.ticketAddress}</div>}
             {Array.isArray(settings.ticketRefs) && settings.ticketRefs.length > 0 && (
@@ -297,7 +298,7 @@ export default function Ticket({ session }) {
           <div className="mt-2">Método de Pago: {payment}</div>
 
           <div className="my-4 border-t border-dashed"></div>
-          <div className="text-center">{settings.ticketFooter || '¡Gracias por su compra!'}</div>
+          <div className="text-center">{settings.ticketFooter || SETTINGS_DEFAULTS.ticketFooter}</div>
         </div>
       </div>
     </section>

@@ -2,24 +2,25 @@ import { useEffect, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { supabase, hasSupabaseConfig } from '../../lib/supabaseClient'
 import { useUI } from '../ui/UIProvider'
+import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
 
 const STORAGE_SETTINGS = 'aij-settings'
 
 export default function Configuracion() {
   const { notify } = useUI()
   const [form, setForm] = useState({
-    ticketCompanyName: 'AIJMIROSHOP',
-    ticketEmail: 'ntarquilopez@gmail.com',
-    ticketAddress: '6 de octubre y soto mayor',
-    ticketRefsLine: '78615119, 63258974, 78945612', // CSV lineal de ejemplo
-    ticketFooter: '¡Gracias por su compra!',
+    ticketCompanyName: SETTINGS_DEFAULTS.ticketCompanyName,
+    ticketEmail: SETTINGS_DEFAULTS.ticketEmail,
+    ticketAddress: SETTINGS_DEFAULTS.ticketAddress,
+    ticketRefsLine: SETTINGS_DEFAULTS.ticketRefsLine,
+    ticketFooter: SETTINGS_DEFAULTS.ticketFooter,
   })
   const [supabaseUrl, setSupabaseUrl] = useState(() => localStorage.getItem('aij-supabase-url') || '')
   const [supabaseAnon, setSupabaseAnon] = useState(() => localStorage.getItem('aij-supabase-anon') || '')
   const [supaStatus, setSupaStatus] = useState('')
 
   useEffect(() => {
-    const s = loadData(STORAGE_SETTINGS, {})
+    const s = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
     setForm((prev) => ({
       ...prev,
       ticketCompanyName: s.ticketCompanyName ?? prev.ticketCompanyName,
@@ -31,19 +32,19 @@ export default function Configuracion() {
   }, [])
 
   const onSave = () => {
-    const current = loadData(STORAGE_SETTINGS, {})
+    const current = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
     const refs = (form.ticketRefsLine || '')
       .split(',')
       .map((x) => x.trim())
       .filter(Boolean)
     const next = {
       ...current,
-      ticketCompanyName: form.ticketCompanyName || 'AIJMIROSHOP',
-      ticketEmail: form.ticketEmail || '',
-      ticketAddress: form.ticketAddress || '',
+      ticketCompanyName: form.ticketCompanyName || SETTINGS_DEFAULTS.ticketCompanyName,
+      ticketEmail: form.ticketEmail || SETTINGS_DEFAULTS.ticketEmail,
+      ticketAddress: form.ticketAddress || SETTINGS_DEFAULTS.ticketAddress,
       ticketRefs: refs,
       ticketRefsLine: refs.join(', '),
-      ticketFooter: form.ticketFooter || '¡Gracias por su compra!',
+      ticketFooter: form.ticketFooter || SETTINGS_DEFAULTS.ticketFooter,
     }
     saveData(STORAGE_SETTINGS, next)
     notify({ type: 'success', message: 'Configuración de ticket guardada.' })
