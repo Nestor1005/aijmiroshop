@@ -1,5 +1,5 @@
-import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { loadData } from '../utils/dataManager'
 import Inventario from './cards/Inventario'
 import Clientes from './cards/Clientes'
@@ -11,6 +11,7 @@ import Configuracion from './cards/Configuracion'
 
 export default function Dashboard({ onLogout, getSession }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const session = getSession()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
@@ -38,6 +39,31 @@ export default function Dashboard({ onLogout, getSession }) {
     const roleOk = !link.role || link.role === session?.role
     const moduleOk = modules[link.key] !== false // por defecto true
     return roleOk && moduleOk
+  }
+
+  const allowedLinks = links.filter(canSee)
+  const firstAllowed = allowedLinks[0]
+
+  // Redireccionar el inicio (/) al primer módulo permitido
+  useEffect(() => {
+    if ((location.pathname === '/' || location.pathname === '') && firstAllowed) {
+      const inventarioLink = links.find((l) => l.key === 'inventario')
+      if (!canSee(inventarioLink)) {
+        navigate(`/${firstAllowed.to}`, { replace: true })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, session?.role, JSON.stringify(modules)])
+
+  // Guardia por módulo para rutas directas
+  function ModuleGuard({ moduleKey, children }) {
+    const link = links.find((l) => l.key === moduleKey)
+    if (!link) return children
+    if (!canSee(link)) {
+      if (firstAllowed) navigate(`/${firstAllowed.to}`, { replace: true })
+      return null
+    }
+    return children
   }
 
   return (
@@ -121,13 +147,13 @@ export default function Dashboard({ onLogout, getSession }) {
 
         <div className="grid grid-cols-1 gap-6">
           <Routes>
-            <Route index element={<Inventario />} />
-            <Route path="clientes" element={<Clientes />} />
-            <Route path="ticket" element={<Ticket session={session} />} />
-            <Route path="historial" element={<Historial />} />
-            <Route path="usuarios" element={<Usuarios session={session} />} />
-            <Route path="estadisticas" element={<Estadisticas />} />
-            <Route path="configuracion" element={<Configuracion />} />
+            <Route index element={<ModuleGuard moduleKey="inventario"><Inventario /></ModuleGuard>} />
+            <Route path="clientes" element={<ModuleGuard moduleKey="clientes"><Clientes /></ModuleGuard>} />
+            <Route path="ticket" element={<ModuleGuard moduleKey="ticket"><Ticket session={session} /></ModuleGuard>} />
+            <Route path="historial" element={<ModuleGuard moduleKey="historial"><Historial /></ModuleGuard>} />
+            <Route path="usuarios" element={<ModuleGuard moduleKey="usuarios"><Usuarios session={session} /></ModuleGuard>} />
+            <Route path="estadisticas" element={<ModuleGuard moduleKey="estadisticas"><Estadisticas /></ModuleGuard>} />
+            <Route path="configuracion" element={<ModuleGuard moduleKey="configuracion"><Configuracion /></ModuleGuard>} />
           </Routes>
         </div>
       </main>
