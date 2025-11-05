@@ -49,7 +49,7 @@ export default function Login({ onValidate, onLogin }) {
         <p className="text-sm text-gray-500 mb-6 text-center">Acceso al sistema</p>
         <div className="flex justify-center mb-4">
           <span className={`text-xs px-2 py-1 rounded ${cloudEnabled() ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-            {cloudEnabled() ? 'Nube (Supabase) activa' : 'Modo local (sin Supabase)'}
+            {cloudEnabled() ? 'Nube Activa' : 'Modo local (sin Supabase)'}
           </span>
         </div>
 
