@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { loadData } from '../utils/dataManager'
 import Inventario from './cards/Inventario'
 import Clientes from './cards/Clientes'
 import Ticket from './cards/Ticket'
@@ -17,16 +18,25 @@ export default function Dashboard({ onLogout, getSession }) {
   }
 
   const links = [
-    { to: '', label: 'Inventario' },
-    { to: 'clientes', label: 'Clientes' },
-    { to: 'ticket', label: 'Ticket' },
-    { to: 'historial', label: 'Historial' },
-    { to: 'usuarios', label: 'Usuarios', role: 'Administrador' },
-    { to: 'estadisticas', label: 'Estadísticas' },
-    { to: 'configuracion', label: 'Configuración' },
+    { to: '', label: 'Inventario', key: 'inventario' },
+    { to: 'clientes', label: 'Clientes', key: 'clientes' },
+    { to: 'ticket', label: 'Ticket', key: 'ticket' },
+    { to: 'historial', label: 'Historial', key: 'historial' },
+    { to: 'usuarios', label: 'Usuarios', key: 'usuarios', role: 'Administrador' },
+    { to: 'estadisticas', label: 'Estadísticas', key: 'estadisticas' },
+    { to: 'configuracion', label: 'Configuración', key: 'configuracion' },
   ]
 
-  const canSee = (link) => !link.role || link.role === session?.role
+  // Permisos por usuario (configurable en la card Usuarios)
+  const users = loadData('aij-users', [])
+  const current = users.find((u) => u.username === session?.username)
+  const modules = current?.modules || {}
+
+  const canSee = (link) => {
+    const roleOk = !link.role || link.role === session?.role
+    const moduleOk = modules[link.key] !== false // por defecto true
+    return roleOk && moduleOk
+  }
 
   return (
     <div className="min-h-screen flex">
