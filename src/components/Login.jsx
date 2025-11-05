@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /**
@@ -11,17 +11,6 @@ export default function Login({ onValidate, onLogin }) {
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
   const [error, setError] = useState('')
-
-  // Rellenar sugerencias según rol
-  const suggested = useMemo(() => {
-    if (role === 'Administrador') return { u: 'Anahi', p: '2025' }
-    return { u: 'Usuario', p: '2025' }
-  }, [role])
-
-  useEffect(() => {
-    setUsername(suggested.u)
-    setPassword(suggested.p)
-  }, [suggested])
 
   const [loading, setLoading] = useState(false)
   const submit = async (e) => {
@@ -100,10 +89,6 @@ export default function Login({ onValidate, onLogin }) {
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
-
-        <p className="text-xs text-gray-400 mt-6 text-center">
-          Demo: Admin (Anahi/2025) • Usuario (Usuario/2025)
-        </p>
       </div>
     </div>
   )
