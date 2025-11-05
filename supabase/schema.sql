@@ -94,3 +94,17 @@ create policy "anon_read_users" on users for select to anon using (true);
 create policy "anon_write_users" on users for insert to anon with check (true);
 create policy "anon_update_users" on users for update to anon using (true) with check (true);
 create policy "anon_delete_users" on users for delete to anon using (true);
+
+-- Enable Realtime replication (so INSERT/UPDATE/DELETE se transmiten a clientes suscritos)
+do $$ begin
+  alter publication supabase_realtime add table inventory;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table clients;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table history;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table users;
+exception when duplicate_object then null; end $$;

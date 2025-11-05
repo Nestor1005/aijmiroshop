@@ -54,7 +54,13 @@ export async function cloudList(key) {
   if (!cloudEnabled()) return null
   const table = tables[key]
   if (!table) return null
-  const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false })
+  const orderBy =
+    table === 'history' ? 'fecha' :
+    table === 'inventory' ? 'created_at' :
+    table === 'clients' ? 'created_at' :
+    table === 'users' ? 'created_at' : 'id'
+  const query = supabase.from(table).select('*')
+  const { data, error } = await query.order(orderBy, { ascending: false })
   if (error) throw error
   const rows = data || []
   return rows.map((r) => toApp(key, r))
