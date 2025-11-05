@@ -53,15 +53,20 @@ export default function Ticket({ session }) {
   }
 
   const captureAndRegister = async () => {
-    // Capturar ticket a PDF
+    // Capturar ticket a PDF con tamaño ajustado al contenido (sin espacio en blanco)
     const el = ticketRef.current
     if (!el) return
-    const canvas = await html2canvas(el)
+    const canvas = await html2canvas(el, { scale: 2 })
     const imgData = canvas.toDataURL('image/png')
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const ratio = pageWidth / canvas.width
-    pdf.addImage(imgData, 'PNG', 20, 20, canvas.width * ratio - 40, canvas.height * ratio - 40)
+
+    // Definir un ancho objetivo más angosto (recibo) en puntos.
+    // 1pt ≈ 1/72 in; 360pt ≈ 5 pulgadas (~127mm)
+    const targetWidthPt = 360
+    const ratio = targetWidthPt / canvas.width
+    const targetHeightPt = canvas.height * ratio
+
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [targetWidthPt, targetHeightPt] })
+    pdf.addImage(imgData, 'PNG', 0, 0, targetWidthPt, targetHeightPt)
     pdf.save('ticket.pdf')
 
     // Registrar en historial con estado Pendiente
@@ -140,7 +145,7 @@ export default function Ticket({ session }) {
 
       {/* Vista del Ticket tipo recibo para captura */}
       <div className="mt-6 flex justify-center">
-        <div ref={ticketRef} className="w-full max-w-[720px] bg-white text-gray-900 font-mono text-[14px] leading-6 p-6 border rounded-lg shadow-sm">
+        <div ref={ticketRef} className="w-full max-w-[480px] bg-white text-gray-900 font-mono text-[14px] leading-6 p-6 border rounded-lg shadow-sm">
           <div className="text-center">
             <h1 className="text-2xl font-extrabold tracking-widest">{COMPANY.name}</h1>
             <div className="text-sm mt-1">{COMPANY.email}</div>
