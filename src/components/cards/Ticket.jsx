@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { useUI } from '../ui/UIProvider'
+import { cloudEnabled, cloudList, cloudUpsert } from '../../services/cloudData'
 
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -52,6 +53,9 @@ export default function Ticket({ session }) {
     const next = [newClient, ...clients]
     setClients(next)
     saveData(STORAGE_CLIENTS, next)
+    if (cloudEnabled()) {
+      cloudUpsert(STORAGE_CLIENTS, newClient).catch((e) => console.error('Cloud upsert client error:', e))
+    }
     setClientId(newClient.id)
     setQuickClient('')
   }
@@ -91,8 +95,33 @@ export default function Ticket({ session }) {
     const next = [ticket, ...history]
     setHistory(next)
     saveData(STORAGE_HISTORY, next)
+    if (cloudEnabled()) {
+      cloudUpsert(STORAGE_HISTORY, ticket).catch((e) => console.error('Cloud upsert history error:', e))
+    }
     notify({ type: 'success', message: 'Ticket capturado y registrado como Pendiente.' })
   }
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCloud() {
+      if (!cloudEnabled()) return
+      try {
+        const [remoteClients] = await Promise.all([
+          cloudList(STORAGE_CLIENTS)
+        ])
+        if (!cancelled) {
+          if (Array.isArray(remoteClients)) {
+            setClients(remoteClients)
+            saveData(STORAGE_CLIENTS, remoteClients)
+          }
+        }
+      } catch (e) {
+        console.error('Cloud load error (ticket):', e)
+      }
+    }
+    loadCloud()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">

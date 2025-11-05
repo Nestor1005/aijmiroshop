@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { exportToXLSX, importFromXLSX } from '../../utils/exportExcel'
 import { formatMoney, parseMoney } from '../../utils/formatNumbers'
 import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
+import { cloudEnabled, cloudList, cloudReplaceAll } from '../../services/cloudData'
 
 const STORAGE_KEY = 'aij-inventory'
 
@@ -42,12 +43,19 @@ export default function Inventario() {
   const pages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paged = filtered.slice((page - 1) * perPage, page * perPage)
 
-  const update = (next) => {
+  const update = async (next) => {
     setItems(next)
     saveData(STORAGE_KEY, next)
+    if (cloudEnabled()) {
+      try {
+        await cloudReplaceAll(STORAGE_KEY, next)
+      } catch (e) {
+        console.error('Cloud sync error (inventario):', e)
+      }
+    }
   }
 
-  const addItem = () => {
+  const addItem = async () => {
     const nombre = (form.nombre || '').trim()
     if (!nombre) {
       notify({ type: 'error', message: 'Ingresa al menos el nombre del producto.' })
@@ -69,7 +77,7 @@ export default function Inventario() {
           precio: parseMoney(form.precio),
           categoria: form.categoria,
         }
-        update(next)
+        await update(next)
         notify({ type: 'success', message: 'Producto actualizado.' })
       }
       setEditingId(null)
@@ -84,7 +92,7 @@ export default function Inventario() {
         precio: parseMoney(form.precio),
         categoria: form.categoria,
       }
-      update([nuevo, ...items])
+      await update([nuevo, ...items])
       setForm({ nombre: '', color: '', stock: '', costo: '', precio: '', categoria: '' })
       notify({ type: 'success', message: 'Producto agregado al inventario.' })
     }
@@ -106,7 +114,7 @@ export default function Inventario() {
   const onWipe = async () => {
     const ok = await confirm({ title: 'Vaciar inventario', message: 'Esta acción no se puede deshacer.', confirmText: 'Vaciar', cancelText: 'Cancelar' })
     if (ok) {
-      update([])
+      await update([])
       wipeData(STORAGE_KEY)
       notify({ type: 'warning', message: 'Inventario vaciado.' })
     }
@@ -133,9 +141,32 @@ export default function Inventario() {
   const onDelete = async (id) => {
     const ok = await confirm({ title: 'Eliminar producto', message: '¿Deseas eliminar este producto?', confirmText: 'Eliminar' })
     if (!ok) return
-    update(items.filter((x) => x.id !== id))
+    await update(items.filter((x) => x.id !== id))
     notify({ type: 'warning', message: 'Producto eliminado.' })
   }
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCloud() {
+      if (!cloudEnabled()) return
+      try {
+        const remote = await cloudList(STORAGE_KEY)
+        const local = loadData(STORAGE_KEY, [])
+        if (!cancelled && Array.isArray(remote)) {
+          if ((remote?.length || 0) === 0 && (local?.length || 0) > 0) {
+            try { await cloudReplaceAll(STORAGE_KEY, local) } catch {}
+          } else {
+            setItems(remote)
+            saveData(STORAGE_KEY, remote)
+          }
+        }
+      } catch (e) {
+        console.error('Cloud load error (inventario):', e)
+      }
+    }
+    loadCloud()
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">

@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 import { useUI } from '../ui/UIProvider'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll } from '../../services/cloudData'
 
 const STORAGE_HISTORY = 'aij-history'
 const STORAGE_PRODUCTS = 'aij-inventory'
@@ -11,6 +12,7 @@ const STORAGE_PRODUCTS = 'aij-inventory'
 export default function Historial() {
   const { notify, confirm } = useUI()
   const [items, setItems] = useState(() => loadData(STORAGE_HISTORY, []))
+  useCloudHistoryLoader(setItems)
   const [perPage, setPerPage] = useState(10)
   const [page, setPage] = useState(1)
   const [query, setQuery] = useState('')
@@ -28,9 +30,17 @@ export default function Historial() {
   const pages = Math.max(1, Math.ceil(filtered.length / perPage))
   const paged = filtered.slice((page - 1) * perPage, page * perPage)
 
-  const update = (next) => {
+  const update = async (next) => {
     setItems(next)
     saveData(STORAGE_HISTORY, next)
+    if (cloudEnabled()) {
+      try {
+        // For batch changes, replace all for simplicity
+        await cloudReplaceAll(STORAGE_HISTORY, next)
+      } catch (e) {
+        console.error('Cloud sync error (historial):', e)
+      }
+    }
   }
 
   const completeTicket = async (id) => {
@@ -58,14 +68,15 @@ export default function Historial() {
 
     const next = [...items]
     next[idx] = { ...t, estado: 'Completado' }
-    update(next)
+    await update(next)
     notify({ type: 'success', message: `Ticket completado. ${cambios} productos actualizados.` })
   }
 
   const deleteTicket = async (id) => {
     const ok = await confirm({ title: 'Eliminar ticket', message: 'Esta acción no se puede deshacer.', confirmText: 'Eliminar' })
     if (!ok) return
-    update(items.filter((t) => t.id !== id))
+    const next = items.filter((t) => t.id !== id)
+    await update(next)
     notify({ type: 'warning', message: 'Ticket eliminado.' })
   }
 
@@ -145,7 +156,7 @@ export default function Historial() {
             onClick={async () => {
               const ok = await confirm({ title: 'Vaciar historial', message: 'Se eliminarán todos los tickets del historial.', confirmText: 'Vaciar' })
               if (!ok) return
-              update([])
+              await update([])
               notify({ type: 'warning', message: 'Historial vaciado.' })
             }}
           >
@@ -233,4 +244,30 @@ export default function Historial() {
       <div ref={ticketRef} style={{ position: 'fixed', left: -9999, top: 0, width: 0, height: 0, overflow: 'hidden' }} />
     </section>
   )
+}
+
+// Cargar desde la nube al montar
+export function useCloudHistoryLoader(setItems) {
+  useEffect(() => {
+    let cancelled = false
+    async function loadCloud() {
+      if (!cloudEnabled()) return
+      try {
+        const remote = await cloudList(STORAGE_HISTORY)
+        const local = loadData(STORAGE_HISTORY, [])
+        if (!cancelled && Array.isArray(remote)) {
+          if ((remote?.length || 0) === 0 && (local?.length || 0) > 0) {
+            try { await cloudReplaceAll(STORAGE_HISTORY, local) } catch {}
+          } else {
+            setItems(remote)
+            saveData(STORAGE_HISTORY, remote)
+          }
+        }
+      } catch (e) {
+        console.error('Cloud load error (historial):', e)
+      }
+    }
+    loadCloud()
+    return () => { cancelled = true }
+  }, [setItems])
 }
