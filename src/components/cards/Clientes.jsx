@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { loadData, saveData, wipeData } from '../../utils/dataManager'
+import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
 
 const STORAGE_KEY = 'aij-clients'
@@ -31,8 +31,11 @@ export default function Clientes() {
   }
 
   const addItem = () => {
-    if (!form.nombre) return
-    const nuevo = { id: crypto.randomUUID(), ...form }
+    if (!form.nombre) {
+      notify({ type: 'error', message: 'Ingresa al menos el nombre del cliente.' })
+      return
+    }
+    const nuevo = { id: uid('cli'), ...form }
     update([nuevo, ...items])
     setForm({ nombre: '', cedula: '', telefono: '', direccion: '' })
     notify({ type: 'success', message: 'Cliente agregado.' })

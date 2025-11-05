@@ -17,3 +17,11 @@ export function saveData(key, value) {
 export function wipeData(key) {
   localStorage.removeItem(key)
 }
+
+// Generador de IDs robusto (con fallback si randomUUID no está disponible)
+export function uid(prefix = '') {
+  const base = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+  return prefix ? `${prefix}_${base}` : base
+}

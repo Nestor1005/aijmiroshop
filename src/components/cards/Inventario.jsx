@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { exportToXLSX, importFromXLSX } from '../../utils/exportExcel'
 import { formatMoney, parseMoney } from '../../utils/formatNumbers'
-import { loadData, saveData, wipeData } from '../../utils/dataManager'
+import { loadData, saveData, wipeData, uid } from '../../utils/dataManager'
 import { useUI } from '../ui/UIProvider'
 
 const STORAGE_KEY = 'aij-inventory'
@@ -46,9 +46,12 @@ export default function Inventario() {
   }
 
   const addItem = () => {
-    if (!form.nombre) return
+    if (!form.nombre) {
+      notify({ type: 'error', message: 'Ingresa al menos el nombre del producto.' })
+      return
+    }
     const nuevo = {
-      id: crypto.randomUUID(),
+      id: uid('prod'),
       nombre: form.nombre,
       color: form.color,
       stock: Number(form.stock || 0),
