@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 import { cloudEnabled, cloudList, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
@@ -8,12 +8,6 @@ const STORAGE_PRODUCTS = 'aij-inventory'
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_SETTINGS = 'aij-settings'
 const STORAGE_USERS = 'aij-users'
-
-function fmtDateShort(d) {
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  return `${dd}/${mm}`
-}
 
 export default function Estadisticas() {
   const [range, setRange] = useState('30') // 7, 30, 90, all
@@ -158,25 +152,7 @@ export default function Estadisticas() {
     return Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 5)
   }, [completed])
 
-  const seriesDias = useMemo(() => {
-    // Construir lista de días desde start hasta hoy
-    const out = []
-    const cursor = new Date(start)
-    cursor.setHours(0, 0, 0, 0)
-    const end = new Date(now)
-    end.setHours(0, 0, 0, 0)
-    while (cursor <= end) {
-      const label = fmtDateShort(cursor)
-      out.push({ label, key: cursor.toISOString().slice(0, 10), total: 0 })
-      cursor.setDate(cursor.getDate() - 0 + 1)
-    }
-    for (const t of completed) {
-      const dayKey = new Date(t.fecha).toISOString().slice(0, 10)
-      const bucket = out.find((d) => d.key === dayKey)
-      if (bucket) bucket.total += Number(t.total || 0)
-    }
-    return out
-  }, [completed, start])
+  // Se removió el gráfico de "Ventas por día" (y su serie) a pedido.
 
   // Ventas del día por usuario (tickets Completados hoy)
   const ventasHoyPorUsuario = useMemo(() => {
@@ -205,24 +181,7 @@ export default function Estadisticas() {
     return Array.from(map.values()).sort((a, b) => b.importe - a.importe)
   }, [history, users])
 
-  const maxDia = seriesDias.reduce((m, d) => Math.max(m, d.total), 0) || 1
-  // Configuración responsive para el gráfico de barras
-  const barWidth = 12 // px en móvil (w-3)
-  const barWidthSm = 18 // px en >= sm (w-4.5 aprox)
-  const gapPx = 4 // Tailwind gap-1
-  const paddingPx = 24 // p-3 en el contenedor interior
-  const chartWidthMobile = seriesDias.length * (barWidth + gapPx) + paddingPx * 2
-  const labelStep = Math.max(1, Math.ceil(seriesDias.length / 12)) // máx ~12 etiquetas visibles en móvil
-
-  // Auto-scroll al final (hoy) cuando cambia la serie o el rango
-  const scrollRef = useRef(null)
-  useEffect(() => {
-    const el = scrollRef.current
-    if (el) {
-      // scroll al extremo derecho para ver la fecha más reciente
-      el.scrollLeft = el.scrollWidth
-    }
-  }, [seriesDias, range])
+  // Gráfico removido; sin auto-scroll ni refs.
 
   return (
     <section className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
@@ -302,36 +261,7 @@ export default function Estadisticas() {
         </div>
       </div>
 
-      {/* Ventas por día */}
-      <div className="mb-6">
-        <div className="text-sm font-medium mb-2">Ventas por día</div>
-        <div className="border rounded-lg bg-white">
-          <div className="overflow-x-auto" ref={scrollRef}>
-            <div
-              className="h-40 flex items-end gap-1 p-3"
-              style={{ width: `${Math.max(chartWidthMobile, 320)}px` }}
-            >
-              {seriesDias.map((d, i) => (
-                <div key={d.key} className="flex flex-col items-center" style={{ width: `${barWidth}px` }}>
-                  <div
-                    className="w-full sm:hidden bg-primary-500 rounded-t"
-                    style={{ height: `${(d.total / maxDia) * 100 || 0}%` }}
-                    title={`Bs. ${formatMoney(d.total)}`}
-                  />
-                  <div
-                    className="hidden sm:block bg-primary-500 rounded-t"
-                    style={{ width: `${barWidthSm}px`, height: `${(d.total / maxDia) * 100 || 0}%` }}
-                    title={`Bs. ${formatMoney(d.total)}`}
-                  />
-                  <div className="text-[10px] mt-1 text-gray-500 whitespace-nowrap">
-                    {i % labelStep === 0 ? d.label : ''}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Se removió la sección de "Ventas por día" */}
 
       {/* Top productos */}
       <div className="grid md:grid-cols-2 gap-3">
