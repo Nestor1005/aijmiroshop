@@ -20,7 +20,7 @@ export default function Login({ onValidate, onLogin }) {
     setError('')
     setLoading(true)
     try {
-      const res = await Promise.resolve(onValidate({ role, username, password }))
+  const res = await Promise.resolve(onValidate({ role, username, password }))
       const ok = typeof res === 'boolean' ? res : !!res?.ok
       if (!ok) {
         const reason = res?.reason
@@ -35,7 +35,12 @@ export default function Login({ onValidate, onLogin }) {
         return
       }
       // Persistir sesión (simple: localStorage)
-      onLogin({ role, username, remember, ts: Date.now() })
+      // Si el login viene de la nube, usamos el usuario/rol/módulos oficiales
+      const cloudUser = res && typeof res === 'object' ? res.user : null
+      const sessionPayload = cloudUser
+        ? { role: cloudUser.role || role, username: cloudUser.username || username, modules: cloudUser.modules || {}, remember, ts: Date.now() }
+        : { role, username, remember, ts: Date.now() }
+      onLogin(sessionPayload)
       navigate('/', { replace: true })
     } finally {
       setLoading(false)

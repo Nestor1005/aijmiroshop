@@ -61,7 +61,7 @@ export const validateLogin = async ({ role, username, password }) => {
   if (u.enabled === false) return { ok: false, reason: 'disabled' }
   if (normalizeRole(u.role) !== normRole) return { ok: false, reason: 'role-mismatch' }
   if (String(u.password || '').trim() !== normPass) return { ok: false, reason: 'password' }
-  return { ok: true }
+  return { ok: true, via: cloudEnabled() ? 'cloud' : 'local', user: u }
 }
 
 // Rutas protegidas por rol

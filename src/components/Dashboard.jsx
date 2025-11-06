@@ -30,10 +30,15 @@ export default function Dashboard({ onLogout, getSession }) {
     { to: 'configuracion', label: 'Configuración', key: 'configuracion' },
   ]
 
-  // Permisos por usuario (configurable en la card Usuarios)
-  const users = loadData('aij-users', [])
-  const current = users.find((u) => u.username === session?.username)
-  const modules = current?.modules || {}
+  // Permisos por usuario (preferir los que vienen en la sesión desde la nube)
+  const sessionModules = session?.modules || null
+  let modules = sessionModules || {}
+  // Fallback: si no hay módulos en sesión, revisa caché local (para modo demo/local)
+  if (!sessionModules) {
+    const users = loadData('aij-users', [])
+    const current = users.find((u) => u.username === session?.username)
+    modules = current?.modules || {}
+  }
 
   const canSee = (link) => {
     const roleOk = !link.role || link.role === session?.role
