@@ -17,7 +17,7 @@ const STORAGE_SETTINGS = 'aij-settings'
 export default function Ticket({ session }) {
   const { notify } = useUI()
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
-  const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
+  const [products, setProducts] = useState(() => loadData(STORAGE_PRODUCTS, []))
   const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
   const [settings, setSettings] = useState(() => loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS))
 
@@ -131,13 +131,18 @@ export default function Ticket({ session }) {
     async function loadCloud() {
       if (!cloudEnabled()) return
       try {
-        const [remoteClients] = await Promise.all([
-          cloudList(STORAGE_CLIENTS)
+        const [remoteClients, remoteProducts] = await Promise.all([
+          cloudList(STORAGE_CLIENTS),
+          cloudList(STORAGE_PRODUCTS),
         ])
         if (!cancelled) {
           if (Array.isArray(remoteClients)) {
             setClients(remoteClients)
             saveData(STORAGE_CLIENTS, remoteClients)
+          }
+          if (Array.isArray(remoteProducts)) {
+            setProducts(remoteProducts)
+            saveData(STORAGE_PRODUCTS, remoteProducts)
           }
         }
       } catch (e) {
@@ -161,7 +166,7 @@ export default function Ticket({ session }) {
         setSettings(s)
       })
     }
-    // Realtime for clients in ticket selector
+    // Realtime for clients en selector
     let unsub = () => {}
     if (cloudEnabled()) {
       unsub = cloudSubscribe(STORAGE_CLIENTS, ({ event, new: n, old }) => {
@@ -179,7 +184,25 @@ export default function Ticket({ session }) {
         })
       })
     }
-    return () => { cancelled = true; try { unsub() } catch {}; try { unsubSettings() } catch {} }
+    // Realtime para inventario: refleja INSERT/UPDATE/DELETE al instante
+    let unsubInventory = () => {}
+    if (cloudEnabled()) {
+      unsubInventory = cloudSubscribe(STORAGE_PRODUCTS, ({ event, new: n, old }) => {
+        setProducts((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } }
+            else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_PRODUCTS, next)
+          return next
+        })
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {}; try { unsubSettings() } catch {}; try { unsubInventory() } catch {} }
   }, [])
 
   return (

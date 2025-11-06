@@ -47,6 +47,7 @@ export default function Historial() {
 
     // Descontar stock
     const inv = loadData(STORAGE_PRODUCTS, [])
+    const updated = []
     let cambios = 0
     for (const it of t.items || []) {
       const p = inv.find((x) => x.id === it.id)
@@ -55,10 +56,14 @@ export default function Historial() {
         if (newStock !== p.stock) {
           p.stock = newStock
           cambios++
+          updated.push({ ...p })
         }
       }
     }
     saveData(STORAGE_PRODUCTS, inv)
+    if (cloudEnabled() && updated.length > 0) {
+      try { await cloudUpsert(STORAGE_PRODUCTS, updated) } catch (e) { console.error('Cloud upsert (inventario por completar):', e) }
+    }
 
     const next = [...items]
     next[idx] = { ...t, estado: 'Completado' }
