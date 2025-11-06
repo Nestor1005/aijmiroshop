@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
+import { cloudEnabled, cloudList, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_HISTORY = 'aij-history'
 const STORAGE_PRODUCTS = 'aij-inventory'
 const STORAGE_CLIENTS = 'aij-clients'
 const STORAGE_SETTINGS = 'aij-settings'
+const STORAGE_USERS = 'aij-users'
 
 function fmtDateShort(d) {
   const dd = String(d.getDate()).padStart(2, '0')
@@ -20,9 +22,97 @@ export default function Estadisticas() {
     return Number(s.lowStockThreshold ?? 5)
   })
 
-  const history = loadData(STORAGE_HISTORY, [])
-  const products = loadData(STORAGE_PRODUCTS, [])
-  const clients = loadData(STORAGE_CLIENTS, [])
+  const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
+  const [products, setProducts] = useState(() => loadData(STORAGE_PRODUCTS, []))
+  const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
+  const [users, setUsers] = useState(() => loadData(STORAGE_USERS, []))
+
+  // Cargar desde la nube y suscribirse en tiempo real (history, products, clients, users)
+  useEffect(() => {
+    let cancelled = false
+    const loadAll = async () => {
+      if (!cloudEnabled()) return
+      try {
+        const [remoteHistory, remoteProducts, remoteClients, remoteUsers] = await Promise.all([
+          cloudList(STORAGE_HISTORY),
+          cloudList(STORAGE_PRODUCTS),
+          cloudList(STORAGE_CLIENTS),
+          cloudList(STORAGE_USERS),
+        ])
+        if (cancelled) return
+        if (Array.isArray(remoteHistory)) { setHistory(remoteHistory); saveData(STORAGE_HISTORY, remoteHistory) }
+        if (Array.isArray(remoteProducts)) { setProducts(remoteProducts); saveData(STORAGE_PRODUCTS, remoteProducts) }
+        if (Array.isArray(remoteClients)) { setClients(remoteClients); saveData(STORAGE_CLIENTS, remoteClients) }
+        if (Array.isArray(remoteUsers)) {
+          if ((remoteUsers?.length || 0) === 0) {
+            // seed si no hay nada y hay local
+            const local = loadData(STORAGE_USERS, [])
+            if (local?.length) { try { await cloudReplaceAll(STORAGE_USERS, local) } catch {} }
+            setUsers(local)
+          } else { setUsers(remoteUsers); saveData(STORAGE_USERS, remoteUsers) }
+        }
+      } catch {}
+    }
+    loadAll()
+
+    let unsubs = []
+    if (cloudEnabled()) {
+      const pushUnsub = (fn) => unsubs.push(fn)
+      pushUnsub(cloudSubscribe(STORAGE_HISTORY, ({ event, new: n, old }) => {
+        setHistory((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } } else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_HISTORY, next)
+          return next
+        })
+      }))
+      pushUnsub(cloudSubscribe(STORAGE_PRODUCTS, ({ event, new: n, old }) => {
+        setProducts((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } } else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_PRODUCTS, next)
+          return next
+        })
+      }))
+      pushUnsub(cloudSubscribe(STORAGE_CLIENTS, ({ event, new: n, old }) => {
+        setClients((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } } else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_CLIENTS, next)
+          return next
+        })
+      }))
+      pushUnsub(cloudSubscribe(STORAGE_USERS, ({ event, new: n, old }) => {
+        setUsers((prev) => {
+          let next = prev
+          if (event === 'INSERT' || event === 'UPDATE') {
+            const idx = next.findIndex((x) => x.id === n.id)
+            if (idx !== -1) { next = [...next]; next[idx] = { ...next[idx], ...n } } else { next = [n, ...next] }
+          } else if (event === 'DELETE') {
+            next = next.filter((x) => x.id !== (old?.id))
+          }
+          saveData(STORAGE_USERS, next)
+          return next
+        })
+      }))
+    }
+    return () => { cancelled = true; unsubs.forEach((u) => { try { u() } catch {} }) }
+  }, [])
 
   const now = new Date()
   const start = useMemo(() => {
@@ -87,6 +177,33 @@ export default function Estadisticas() {
     }
     return out
   }, [completed, start])
+
+  // Ventas del día por usuario (tickets Completados hoy)
+  const ventasHoyPorUsuario = useMemo(() => {
+    const startDay = new Date()
+    startDay.setHours(0, 0, 0, 0)
+    const endDay = new Date()
+    endDay.setHours(23, 59, 59, 999)
+    const ofToday = history.filter((t) => {
+      if (t.estado !== 'Completado') return false
+      const dt = new Date(t.fecha)
+      return dt >= startDay && dt <= endDay
+    })
+    const map = new Map()
+    for (const t of ofToday) {
+      const name = String(t.atendidoPor || '—')
+      const user = users.find((u) => String(u.username || '').trim().toLowerCase() === name.trim().toLowerCase())
+      const role = user?.role || 'Usuario'
+      const key = name.toLowerCase()
+      const prev = map.get(key) || { nombre: name, role, ventas: 0, importe: 0 }
+      prev.ventas += 1
+      prev.importe += Number(t.total || 0)
+      // en caso de que role cambie, preferir el más reciente
+      prev.role = role
+      map.set(key, prev)
+    }
+    return Array.from(map.values()).sort((a, b) => b.importe - a.importe)
+  }, [history, users])
 
   const maxDia = seriesDias.reduce((m, d) => Math.max(m, d.total), 0) || 1
   // Configuración responsive para el gráfico de barras
@@ -241,9 +358,30 @@ export default function Estadisticas() {
           </table>
         </div>
         <div className="p-4 rounded-lg border">
-          <div className="text-sm text-gray-600">
-            Este reporte es ligero: no usa librerías de gráficos externas y se basa en los datos locales (inventario, clientes y tickets). Ajusta el período para ver tendencias recientes o históricas.
-          </div>
+          <div className="text-sm font-medium mb-2">Ventas de hoy por usuario</div>
+          {ventasHoyPorUsuario.length === 0 && <div className="text-sm text-gray-500">Sin ventas completadas hoy.</div>}
+          {ventasHoyPorUsuario.length > 0 && (
+            <table className="w-full text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="text-left">Rol</th>
+                  <th className="text-left">Usuario</th>
+                  <th className="text-right">Ventas</th>
+                  <th className="text-right">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ventasHoyPorUsuario.map((u) => (
+                  <tr key={u.nombre} className="border-t">
+                    <td className="py-1 pr-2 truncate">{u.role}</td>
+                    <td className="py-1 pr-2 truncate">{u.nombre}</td>
+                    <td className="py-1 text-right">{u.ventas}</td>
+                    <td className="py-1 text-right">Bs. {formatMoney(u.importe)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </section>
