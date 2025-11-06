@@ -1,13 +1,15 @@
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { loadData } from '../utils/dataManager'
-import Inventario from './cards/Inventario'
-import Clientes from './cards/Clientes'
-import Ticket from './cards/Ticket'
-import Historial from './cards/Historial'
-import Usuarios from './cards/Usuarios'
-import Estadisticas from './cards/Estadisticas'
-import Configuracion from './cards/Configuracion'
+
+// Code splitting por ruta para mejorar tiempo de carga
+const Inventario = lazy(() => import('./cards/Inventario'))
+const Clientes = lazy(() => import('./cards/Clientes'))
+const Ticket = lazy(() => import('./cards/Ticket'))
+const Historial = lazy(() => import('./cards/Historial'))
+const Usuarios = lazy(() => import('./cards/Usuarios'))
+const Estadisticas = lazy(() => import('./cards/Estadisticas'))
+const Configuracion = lazy(() => import('./cards/Configuracion'))
 
 export default function Dashboard({ onLogout, getSession }) {
   const navigate = useNavigate()
@@ -151,15 +153,17 @@ export default function Dashboard({ onLogout, getSession }) {
         )}
 
         <div className="grid grid-cols-1 gap-6">
-          <Routes>
-            <Route index element={<ModuleGuard moduleKey="inventario"><Inventario /></ModuleGuard>} />
-            <Route path="clientes" element={<ModuleGuard moduleKey="clientes"><Clientes /></ModuleGuard>} />
-            <Route path="ticket" element={<ModuleGuard moduleKey="ticket"><Ticket session={session} /></ModuleGuard>} />
-            <Route path="historial" element={<ModuleGuard moduleKey="historial"><Historial /></ModuleGuard>} />
-            <Route path="usuarios" element={<ModuleGuard moduleKey="usuarios"><Usuarios session={session} /></ModuleGuard>} />
-            <Route path="estadisticas" element={<ModuleGuard moduleKey="estadisticas"><Estadisticas /></ModuleGuard>} />
-            <Route path="configuracion" element={<ModuleGuard moduleKey="configuracion"><Configuracion /></ModuleGuard>} />
-          </Routes>
+          <Suspense fallback={<div className="p-4 text-sm text-gray-500">Cargando…</div>}>
+            <Routes>
+              <Route index element={<ModuleGuard moduleKey="inventario"><Inventario /></ModuleGuard>} />
+              <Route path="clientes" element={<ModuleGuard moduleKey="clientes"><Clientes /></ModuleGuard>} />
+              <Route path="ticket" element={<ModuleGuard moduleKey="ticket"><Ticket session={session} /></ModuleGuard>} />
+              <Route path="historial" element={<ModuleGuard moduleKey="historial"><Historial /></ModuleGuard>} />
+              <Route path="usuarios" element={<ModuleGuard moduleKey="usuarios"><Usuarios session={session} /></ModuleGuard>} />
+              <Route path="estadisticas" element={<ModuleGuard moduleKey="estadisticas"><Estadisticas /></ModuleGuard>} />
+              <Route path="configuracion" element={<ModuleGuard moduleKey="configuracion"><Configuracion /></ModuleGuard>} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
     </div>

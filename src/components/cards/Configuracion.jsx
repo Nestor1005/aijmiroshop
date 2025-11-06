@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
-import { supabase, hasSupabaseConfig } from '../../lib/supabaseClient'
+import { hasSupabaseConfig } from '../../lib/supabaseClient'
 import { useUI } from '../ui/UIProvider'
 import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
+import { cloudEnabled, cloudList, cloudUpsert, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
 
 const STORAGE_SETTINGS = 'aij-settings'
 
@@ -20,18 +21,66 @@ export default function Configuracion() {
   const [supaStatus, setSupaStatus] = useState('')
 
   useEffect(() => {
-    const s = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
-    setForm((prev) => ({
-      ...prev,
-      ticketCompanyName: s.ticketCompanyName ?? prev.ticketCompanyName,
-      ticketEmail: s.ticketEmail ?? prev.ticketEmail,
-      ticketAddress: s.ticketAddress ?? prev.ticketAddress,
-      ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (s.ticketRefsLine ?? ''),
-      ticketFooter: s.ticketFooter ?? prev.ticketFooter,
-    }))
+    let cancelled = false
+    const load = async () => {
+      try {
+        if (cloudEnabled()) {
+          const remote = await cloudList(STORAGE_SETTINGS)
+          const local = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
+          let s
+          if (Array.isArray(remote) && remote.length > 0) {
+            // si hay varias filas, usa la primera por ahora
+            s = remote.find((r) => r.id === 'global') || remote[0]
+            saveData(STORAGE_SETTINGS, normalizeSettings(s))
+          } else {
+            // seed a la nube con los locales
+            const payload = { id: 'global', ...local }
+            try { await cloudReplaceAll(STORAGE_SETTINGS, [payload]) } catch {}
+            s = local
+          }
+          if (!cancelled && s) applyForm(s)
+        } else {
+          const s = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
+          if (!cancelled) applyForm(s)
+        }
+      } catch {
+        const s = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
+        if (!cancelled) applyForm(s)
+      }
+    }
+    const applyForm = (s) => {
+      setForm((prev) => ({
+        ...prev,
+        ticketCompanyName: s.ticketCompanyName ?? prev.ticketCompanyName,
+        ticketEmail: s.ticketEmail ?? prev.ticketEmail,
+        ticketAddress: s.ticketAddress ?? prev.ticketAddress,
+        ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (s.ticketRefsLine ?? ''),
+        ticketFooter: s.ticketFooter ?? prev.ticketFooter,
+      }))
+    }
+    const normalizeSettings = (s) => ({
+      ticketCompanyName: s.ticketCompanyName,
+      ticketEmail: s.ticketEmail,
+      ticketAddress: s.ticketAddress,
+      ticketRefs: Array.isArray(s.ticketRefs) ? s.ticketRefs : [],
+      ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (s.ticketRefsLine || ''),
+      ticketFooter: s.ticketFooter,
+    })
+    load()
+    let unsub = () => {}
+    if (cloudEnabled()) {
+      unsub = cloudSubscribe(STORAGE_SETTINGS, ({ event, new: n }) => {
+        if (!n) return
+        const s = n.id ? n : { id: 'global', ...n }
+        const norm = normalizeSettings(s)
+        saveData(STORAGE_SETTINGS, norm)
+        applyForm(norm)
+      })
+    }
+    return () => { cancelled = true; try { unsub() } catch {} }
   }, [])
 
-  const onSave = () => {
+  const onSave = async () => {
     const current = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
     const refs = (form.ticketRefsLine || '')
       .split(',')
@@ -47,6 +96,9 @@ export default function Configuracion() {
       ticketFooter: form.ticketFooter || SETTINGS_DEFAULTS.ticketFooter,
     }
     saveData(STORAGE_SETTINGS, next)
+    if (cloudEnabled()) {
+      try { await cloudUpsert(STORAGE_SETTINGS, { id: 'global', ...next }) } catch {}
+    }
     notify({ type: 'success', message: 'Configuración de ticket guardada.' })
   }
 

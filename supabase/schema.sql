@@ -46,11 +46,23 @@ create table if not exists users (
   created_at timestamp with time zone default now()
 );
 
+-- global settings (single-row or multi-tenant por id)
+create table if not exists settings (
+  id text primary key,
+  ticket_company_name text,
+  ticket_email text,
+  ticket_address text,
+  ticket_refs jsonb default '[]'::jsonb,
+  ticket_footer text,
+  updated_at timestamp with time zone default now()
+);
+
 -- Recommended Row Level Security (RLS) off for anon demo; enable and policies for production
 alter table inventory enable row level security;
 alter table clients enable row level security;
 alter table history enable row level security;
 alter table users enable row level security;
+alter table settings enable row level security;
 
 -- Public read/write for anon (demo). Replace with proper policies in production.
 -- Postgres no soporta IF NOT EXISTS en CREATE POLICY, por eso usamos DROP IF EXISTS antes.
@@ -95,6 +107,16 @@ create policy "anon_write_users" on users for insert to anon with check (true);
 create policy "anon_update_users" on users for update to anon using (true) with check (true);
 create policy "anon_delete_users" on users for delete to anon using (true);
 
+-- settings
+drop policy if exists "anon_read_settings" on settings;
+drop policy if exists "anon_write_settings" on settings;
+drop policy if exists "anon_update_settings" on settings;
+drop policy if exists "anon_delete_settings" on settings;
+create policy "anon_read_settings" on settings for select to anon using (true);
+create policy "anon_write_settings" on settings for insert to anon with check (true);
+create policy "anon_update_settings" on settings for update to anon using (true) with check (true);
+create policy "anon_delete_settings" on settings for delete to anon using (true);
+
 -- Enable Realtime replication (so INSERT/UPDATE/DELETE se transmiten a clientes suscritos)
 do $$ begin
   alter publication supabase_realtime add table inventory;
@@ -107,4 +129,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table users;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table settings;
 exception when duplicate_object then null; end $$;

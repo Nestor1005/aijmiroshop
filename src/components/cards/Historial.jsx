@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
 import { useUI } from '../ui/UIProvider'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+// Carga diferida para mejorar rendimiento inicial
+// import html2canvas from 'html2canvas'
+// import jsPDF from 'jspdf'
 import { cloudEnabled, cloudList, cloudUpsert, cloudDelete, cloudReplaceAll, cloudSubscribe } from '../../services/cloudData'
 import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
 
@@ -133,12 +134,16 @@ export default function Historial() {
         <div style="text-align:center">${footer}</div>
       </div>
     `
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
     const canvas = await html2canvas(container.firstElementChild, { scale: 2 })
     const imgData = canvas.toDataURL('image/png')
     const targetWidthPt = 360
     const ratio = targetWidthPt / canvas.width
     const targetHeightPt = canvas.height * ratio
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [targetWidthPt, targetHeightPt] })
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [targetWidthPt, targetHeightPt] })
     pdf.addImage(imgData, 'PNG', 0, 0, targetWidthPt, targetHeightPt)
     pdf.save('ticket.pdf')
   }

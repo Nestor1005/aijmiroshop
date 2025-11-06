@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { formatMoney } from '../../utils/formatNumbers'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+// Cargar librerías pesadas bajo demanda para mejorar rendimiento
+// import jsPDF from 'jspdf'
+// import html2canvas from 'html2canvas'
 import { useUI } from '../ui/UIProvider'
 import { cloudEnabled, cloudList, cloudUpsert, cloudSubscribe } from '../../services/cloudData'
 import { SETTINGS_DEFAULTS } from '../../constants/settingsDefaults'
@@ -18,7 +19,7 @@ export default function Ticket({ session }) {
   const [clients, setClients] = useState(() => loadData(STORAGE_CLIENTS, []))
   const [products] = useState(() => loadData(STORAGE_PRODUCTS, []))
   const [history, setHistory] = useState(() => loadData(STORAGE_HISTORY, []))
-  const [settings] = useState(() => loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS))
+  const [settings, setSettings] = useState(() => loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS))
 
   const [clientId, setClientId] = useState('')
   const [quickClient, setQuickClient] = useState('')
@@ -84,6 +85,10 @@ export default function Ticket({ session }) {
     // Capturar ticket a PDF con tamaño ajustado al contenido (sin espacio en blanco)
     const el = ticketRef.current
     if (!el) return
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ])
     const canvas = await html2canvas(el, { scale: 2 })
     const imgData = canvas.toDataURL('image/png')
 
@@ -93,7 +98,7 @@ export default function Ticket({ session }) {
     const ratio = targetWidthPt / canvas.width
     const targetHeightPt = canvas.height * ratio
 
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [targetWidthPt, targetHeightPt] })
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [targetWidthPt, targetHeightPt] })
     pdf.addImage(imgData, 'PNG', 0, 0, targetWidthPt, targetHeightPt)
     pdf.save('ticket.pdf')
 
@@ -140,6 +145,22 @@ export default function Ticket({ session }) {
       }
     }
     loadCloud()
+    // Suscripción a settings para tener encabezado/pie en tiempo real
+    let unsubSettings = () => {}
+    if (cloudEnabled()) {
+      unsubSettings = cloudSubscribe(STORAGE_SETTINGS, ({ event, new: n }) => {
+        if (!n) return
+        const s = {
+          ticketCompanyName: n.ticketCompanyName ?? n.ticket_company_name,
+          ticketEmail: n.ticketEmail ?? n.ticket_email,
+          ticketAddress: n.ticketAddress ?? n.ticket_address,
+          ticketRefs: Array.isArray(n.ticketRefs) ? n.ticketRefs : (Array.isArray(n.ticket_refs) ? n.ticket_refs : []),
+          ticketFooter: n.ticketFooter ?? n.ticket_footer,
+        }
+        saveData(STORAGE_SETTINGS, s)
+        setSettings(s)
+      })
+    }
     // Realtime for clients in ticket selector
     let unsub = () => {}
     if (cloudEnabled()) {
@@ -158,7 +179,7 @@ export default function Ticket({ session }) {
         })
       })
     }
-    return () => { cancelled = true; try { unsub() } catch {} }
+    return () => { cancelled = true; try { unsub() } catch {}; try { unsubSettings() } catch {} }
   }, [])
 
   return (

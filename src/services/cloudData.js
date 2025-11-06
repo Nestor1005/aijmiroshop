@@ -5,6 +5,7 @@ const tables = {
   'aij-clients': 'clients',
   'aij-history': 'history',
   'aij-users': 'users',
+  'aij-settings': 'settings',
 }
 
 export const cloudEnabled = () => hasSupabaseConfig()
