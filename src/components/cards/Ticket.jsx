@@ -70,7 +70,14 @@ export default function Ticket({ session }) {
 
   const registerQuickClient = () => {
     if (!quickClient) return
-    const newClient = { id: crypto.randomUUID(), nombre: quickClient, cedula: '', telefono: '', direccion: '' }
+    const newClient = {
+      id: crypto.randomUUID(),
+      nombre: String(quickClient).trim(),
+      cedula: '',
+      telefono: '',
+      // Guardar también la dirección rápida si ya fue ingresada en "Lugar de envío"
+      direccion: String(shipping || '').trim(),
+    }
     const next = [newClient, ...clients]
     setClients(next)
     saveData(STORAGE_CLIENTS, next)
@@ -85,6 +92,19 @@ export default function Ticket({ session }) {
     // Capturar ticket a PDF con tamaño ajustado al contenido (sin espacio en blanco)
     const el = ticketRef.current
     if (!el) return
+    // Si el cliente seleccionado existe y hay "Lugar de envío", persistirlo en el registro del cliente
+    if (client && String(shipping || '').trim()) {
+      const dir = String(shipping).trim()
+      if (String(client.direccion || '').trim() !== dir) {
+        const updated = { ...client, direccion: dir }
+        const nextClients = clients.map((c) => (c.id === client.id ? updated : c))
+        setClients(nextClients)
+        saveData(STORAGE_CLIENTS, nextClients)
+        if (cloudEnabled()) {
+          cloudUpsert(STORAGE_CLIENTS, updated).catch((e) => console.error('Cloud upsert client addr error:', e))
+        }
+      }
+    }
     const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
       import('html2canvas'),
       import('jspdf'),
