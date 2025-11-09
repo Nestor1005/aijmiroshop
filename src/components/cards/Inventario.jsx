@@ -100,7 +100,24 @@ export default function Inventario() {
 
   const onImport = async (file) => {
     const data = await importFromXLSX(file)
-    if (Array.isArray(data)) update(data)
+    if (Array.isArray(data)) {
+      // Normalizar filas importadas (asegurar id y tipos numéricos)
+      const normalized = data.map((d) => ({
+        id: d.id || uid('prod'),
+        nombre: (d.nombre || '').trim(),
+        color: d.color || '',
+        stock: Number(d.stock || 0),
+        costo: parseMoney(d.costo),
+        precio: parseMoney(d.precio),
+        categoria: d.categoria || '',
+      }))
+      await update(normalized)
+      // Reemplazo total en la nube para reflejar eliminaciones y nuevas filas en tiempo real
+      if (cloudEnabled()) {
+        try { await cloudReplaceAll(STORAGE_KEY, normalized) } catch (e) { console.error('Cloud replaceAll (inventario import):', e) }
+      }
+      notify({ type: 'success', message: `Importación completada: ${normalized.length} productos.` })
+    }
   }
 
   const onExport = () => exportToXLSX(items, 'inventario.xlsx')
