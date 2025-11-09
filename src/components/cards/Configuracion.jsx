@@ -62,12 +62,12 @@ export default function Configuracion() {
       try { lastSynced.current = JSON.stringify(normalizeSettings(s)) } catch {}
     }
     const normalizeSettings = (s) => ({
-      ticketCompanyName: s.ticketCompanyName,
-      ticketEmail: s.ticketEmail,
-      ticketAddress: s.ticketAddress,
-      ticketRefs: Array.isArray(s.ticketRefs) ? s.ticketRefs : [],
-      ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (s.ticketRefsLine || ''),
-      ticketFooter: s.ticketFooter,
+      ticketCompanyName: s.ticketCompanyName ?? s.ticket_company_name,
+      ticketEmail: s.ticketEmail ?? s.ticket_email,
+      ticketAddress: s.ticketAddress ?? s.ticket_address,
+      ticketRefs: Array.isArray(s.ticketRefs) ? s.ticketRefs : (Array.isArray(s.ticket_refs) ? s.ticket_refs : []),
+      ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (Array.isArray(s.ticket_refs) ? s.ticket_refs.join(', ') : (s.ticketRefsLine || '')),
+      ticketFooter: s.ticketFooter ?? s.ticket_footer,
     })
     load()
     let unsub = () => {}

@@ -177,12 +177,13 @@ export default function Ticket({ session }) {
     if (cloudEnabled()) {
       unsubSettings = cloudSubscribe(STORAGE_SETTINGS, ({ event, new: n }) => {
         if (!n) return
+        // n ya viene normalizado desde cloudData.toApp()
         const s = {
-          ticketCompanyName: n.ticketCompanyName ?? n.ticket_company_name,
-          ticketEmail: n.ticketEmail ?? n.ticket_email,
-          ticketAddress: n.ticketAddress ?? n.ticket_address,
-          ticketRefs: Array.isArray(n.ticketRefs) ? n.ticketRefs : (Array.isArray(n.ticket_refs) ? n.ticket_refs : []),
-          ticketFooter: n.ticketFooter ?? n.ticket_footer,
+          ticketCompanyName: n.ticketCompanyName,
+          ticketEmail: n.ticketEmail,
+          ticketAddress: n.ticketAddress,
+          ticketRefs: Array.isArray(n.ticketRefs) ? n.ticketRefs : [],
+          ticketFooter: n.ticketFooter,
         }
         saveData(STORAGE_SETTINGS, s)
         setSettings(s)

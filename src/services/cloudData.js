@@ -27,6 +27,17 @@ function toDb(key, row) {
       estado: row.estado ?? 'Pendiente',
     }
   }
+  if (key === 'aij-settings') {
+    return {
+      id: row.id || 'global',
+      ticket_company_name: row.ticketCompanyName ?? row.ticket_company_name ?? null,
+      ticket_email: row.ticketEmail ?? row.ticket_email ?? null,
+      ticket_address: row.ticketAddress ?? row.ticket_address ?? null,
+      ticket_refs: Array.isArray(row.ticketRefs) ? row.ticketRefs : (Array.isArray(row.ticket_refs) ? row.ticket_refs : []),
+      ticket_footer: row.ticketFooter ?? row.ticket_footer ?? null,
+      updated_at: row.updated_at ?? new Date().toISOString(),
+    }
+  }
   // demás tablas usan mismas claves
   return row
 }
@@ -46,6 +57,17 @@ function toApp(key, row) {
       pago: row.pago ?? null,
       atendidoPor: row.atendido_por ?? row.atendidoPor ?? null,
       estado: row.estado ?? 'Pendiente',
+    }
+  }
+  if (key === 'aij-settings') {
+    return {
+      id: row.id || 'global',
+      ticketCompanyName: row.ticket_company_name ?? row.ticketCompanyName ?? null,
+      ticketEmail: row.ticket_email ?? row.ticketEmail ?? null,
+      ticketAddress: row.ticket_address ?? row.ticketAddress ?? null,
+      ticketRefs: Array.isArray(row.ticket_refs) ? row.ticket_refs : (Array.isArray(row.ticketRefs) ? row.ticketRefs : []),
+      ticketFooter: row.ticket_footer ?? row.ticketFooter ?? null,
+      updated_at: row.updated_at ?? null,
     }
   }
   return row
