@@ -153,9 +153,10 @@ export default function Ticket({ session }) {
     async function loadCloud() {
       if (!cloudEnabled()) return
       try {
-        const [remoteClients, remoteProducts] = await Promise.all([
+        const [remoteClients, remoteProducts, remoteSettings] = await Promise.all([
           cloudList(STORAGE_CLIENTS),
           cloudList(STORAGE_PRODUCTS),
+          cloudList(STORAGE_SETTINGS),
         ])
         if (!cancelled) {
           if (Array.isArray(remoteClients)) {
@@ -165,6 +166,18 @@ export default function Ticket({ session }) {
           if (Array.isArray(remoteProducts)) {
             setProducts(remoteProducts)
             saveData(STORAGE_PRODUCTS, remoteProducts)
+          }
+          if (Array.isArray(remoteSettings) && remoteSettings.length > 0) {
+            const raw = remoteSettings.find((r) => r.id === 'global') || remoteSettings[0]
+            const s = {
+              ticketCompanyName: raw.ticketCompanyName,
+              ticketEmail: raw.ticketEmail,
+              ticketAddress: raw.ticketAddress,
+              ticketRefs: Array.isArray(raw.ticketRefs) ? raw.ticketRefs : [],
+              ticketFooter: raw.ticketFooter,
+            }
+            setSettings(s)
+            saveData(STORAGE_SETTINGS, s)
           }
         }
       } catch (e) {

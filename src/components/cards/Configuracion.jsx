@@ -31,14 +31,18 @@ export default function Configuracion() {
           const local = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
           let s
           if (Array.isArray(remote) && remote.length > 0) {
-            // si hay varias filas, usa la primera por ahora
-            s = remote.find((r) => r.id === 'global') || remote[0]
-            saveData(STORAGE_SETTINGS, normalizeSettings(s))
+            // si hay varias filas, usa la que tenga id global o la primera
+            const raw = remote.find((r) => r.id === 'global') || remote[0]
+            const norm = normalizeSettings(raw)
+            saveData(STORAGE_SETTINGS, norm)
+            s = norm
           } else {
-            // seed a la nube con los locales
-            const payload = { id: 'global', ...local }
+            // seed a la nube con los locales (normalizados desde defaults)
+            const normLocal = normalizeSettings(local)
+            const payload = { id: 'global', ...normLocal }
             try { await cloudReplaceAll(STORAGE_SETTINGS, [payload]) } catch {}
-            s = local
+            saveData(STORAGE_SETTINGS, normLocal)
+            s = normLocal
           }
           if (!cancelled && s) applyForm(s)
         } else {
