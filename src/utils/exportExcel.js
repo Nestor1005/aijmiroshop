@@ -5,7 +5,37 @@
  */
 export function exportToXLSX(rows, filename = 'datos.xlsx') {
   import('xlsx').then((XLSX) => {
-    const ws = XLSX.utils.json_to_sheet(rows)
+    // Formatear fechas en zona horaria de Bolivia para que la hora sea correcta al abrir en Excel
+    const TZ = 'America/La_Paz'
+    const formatInTZ = (date) => {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: TZ,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(date)
+      const get = (t) => parts.find((p) => p.type === t)?.value
+      return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`
+    }
+
+    const isISODateString = (v) => typeof v === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)
+    const normalizeRowDates = (row) => Object.fromEntries(
+      Object.entries(row).map(([k, v]) => {
+        if (v instanceof Date) return [k, formatInTZ(v)]
+        if (isISODateString(v)) {
+          const d = new Date(v)
+          if (!isNaN(d)) return [k, formatInTZ(d)]
+        }
+        return [k, v]
+      })
+    )
+
+    const prepared = Array.isArray(rows) ? rows.map(normalizeRowDates) : []
+    const ws = XLSX.utils.json_to_sheet(prepared)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Datos')
     XLSX.writeFile(wb, filename)
