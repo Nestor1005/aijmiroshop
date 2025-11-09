@@ -332,10 +332,10 @@ export default function Ticket({ session }) {
               return (
                 <div key={it.id}>
                   <div className="flex justify-between">
-                    <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}</div>
+                    <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}{it.color ? ` (${it.color})` : ''}</div>
                     <div className="font-bold">Bs. {formatMoney(lineTotal)}</div>
                   </div>
-                  <div className="text-sm">Color: {it.color || '—'} • P/U: Bs. {formatMoney(Number(it.price) || 0)} x {Number(it.qty) || 0}</div>
+                  <div className="text-sm">P/U: Bs. {formatMoney(Number(it.price) || 0)} x {Number(it.qty) || 0}</div>
                 </div>
               )
             })}
