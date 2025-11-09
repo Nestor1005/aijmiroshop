@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { loadData, saveData } from '../../utils/dataManager'
 import { hasSupabaseConfig } from '../../lib/supabaseClient'
 import { useUI } from '../ui/UIProvider'
@@ -19,6 +19,8 @@ export default function Configuracion() {
   const [supabaseUrl, setSupabaseUrl] = useState(() => localStorage.getItem('aij-supabase-url') || '')
   const [supabaseAnon, setSupabaseAnon] = useState(() => localStorage.getItem('aij-supabase-anon') || '')
   const [supaStatus, setSupaStatus] = useState('')
+  // JSON de la última versión sincronizada (para evitar bucles y escribir de más)
+  const lastSynced = useRef('')
 
   useEffect(() => {
     let cancelled = false
@@ -57,6 +59,7 @@ export default function Configuracion() {
         ticketRefsLine: Array.isArray(s.ticketRefs) ? s.ticketRefs.join(', ') : (s.ticketRefsLine ?? ''),
         ticketFooter: s.ticketFooter ?? prev.ticketFooter,
       }))
+      try { lastSynced.current = JSON.stringify(normalizeSettings(s)) } catch {}
     }
     const normalizeSettings = (s) => ({
       ticketCompanyName: s.ticketCompanyName,
@@ -79,6 +82,37 @@ export default function Configuracion() {
     }
     return () => { cancelled = true; try { unsub() } catch {} }
   }, [])
+
+  // Autosave en tiempo real a la nube y local ante cualquier cambio
+  useEffect(() => {
+    // Construir objeto de settings a partir del formulario
+    const refs = (form.ticketRefsLine || '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+    const next = {
+      ticketCompanyName: form.ticketCompanyName || SETTINGS_DEFAULTS.ticketCompanyName,
+      ticketEmail: form.ticketEmail || SETTINGS_DEFAULTS.ticketEmail,
+      ticketAddress: form.ticketAddress || SETTINGS_DEFAULTS.ticketAddress,
+      ticketRefs: refs,
+      ticketRefsLine: refs.join(', '),
+      ticketFooter: form.ticketFooter || SETTINGS_DEFAULTS.ticketFooter,
+    }
+    const json = JSON.stringify(next)
+    if (json === lastSynced.current) return
+    const t = setTimeout(async () => {
+      try {
+        saveData(STORAGE_SETTINGS, next)
+        if (cloudEnabled()) {
+          await cloudUpsert(STORAGE_SETTINGS, { id: 'global', ...next })
+        }
+        lastSynced.current = json
+      } catch (e) {
+        console.error('Autosave settings error:', e)
+      }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [form])
 
   const onSave = async () => {
     const current = loadData(STORAGE_SETTINGS, SETTINGS_DEFAULTS)
