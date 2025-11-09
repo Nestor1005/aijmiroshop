@@ -119,7 +119,7 @@ export default function Historial() {
               <div style=\"max-width:65%;\">${it.name}</div>
               <div style=\"font-weight:700;\">Bs. ${formatMoney((Number(it.qty)||0)*(Number(it.price)||0))}</div>
             </div>
-            <div style=\"font-size:12px;\">P/U: Bs. ${formatMoney(it.price)} x ${Number(it.qty)||0}</div>
+            <div style=\"font-size:12px;\">Color: ${it.color || '—'} • P/U: Bs. ${formatMoney(it.price)} x ${Number(it.qty)||0}</div>
           `).join('')}
         </div>
         <hr style="margin:16px 0; border-style:dashed;">

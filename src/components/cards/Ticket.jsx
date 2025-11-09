@@ -64,7 +64,8 @@ export default function Ticket({ session }) {
         next[idx] = { ...current, qty: newQty }
         return next
       }
-      return [{ id: p.id, name: p.nombre, price: p.precio, qty: 1 }, ...prev]
+      // Agregar al final para mantener el orden de selección
+      return [...prev, { id: p.id, name: p.nombre, color: p.color || '', price: p.precio, qty: 1 }]
     })
   }
 
@@ -128,7 +129,8 @@ export default function Ticket({ session }) {
       cliente: client?.nombre || quickClient || 'Cliente',
       clienteId: client?.id || null,
       fecha: new Date().toISOString(),
-      items: items.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })),
+  // Guardar color también para que Historial y descargas reflejen la info completa
+  items: items.map(it => ({ id: it.id, name: it.name, color: it.color || '', price: it.price, qty: it.qty })),
       subtotal,
       descuento: Number(discount || 0),
       total,
@@ -333,7 +335,7 @@ export default function Ticket({ session }) {
                     <div className="whitespace-pre-wrap break-words max-w-[65%]">{it.name}</div>
                     <div className="font-bold">Bs. {formatMoney(lineTotal)}</div>
                   </div>
-                  <div className="text-sm">P/U: Bs. {formatMoney(Number(it.price) || 0)} x {Number(it.qty) || 0}</div>
+                  <div className="text-sm">Color: {it.color || '—'} • P/U: Bs. {formatMoney(Number(it.price) || 0)} x {Number(it.qty) || 0}</div>
                 </div>
               )
             })}
